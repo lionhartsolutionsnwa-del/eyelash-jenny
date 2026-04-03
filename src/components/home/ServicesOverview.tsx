@@ -148,7 +148,7 @@ function ServicesOverview() {
 
                 {/* Book button */}
                 <div className="mt-6 w-full">
-                  <Button variant="secondary" size="sm" href="/book" className="w-full">
+                  <Button variant="secondary" size="sm" href="/booking" className="w-full">
                     Book Now
                   </Button>
                 </div>

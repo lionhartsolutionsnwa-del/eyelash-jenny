@@ -6,9 +6,9 @@ import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/Button';
 
 const NAV_LINKS = [
-  { label: 'Services', href: '#services' },
-  { label: 'Gallery', href: '#gallery' },
-  { label: 'About', href: '#about' },
+  { label: 'Services', href: '/services' },
+  { label: 'Gallery', href: '/gallery' },
+  { label: 'Booking', href: '/booking' },
 ];
 
 function Header() {
@@ -85,7 +85,7 @@ function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
-            <Button variant="gold" size="sm" href="/book">
+            <Button variant="gold" size="sm" href="/booking">
               Book Now
             </Button>
 
@@ -148,7 +148,7 @@ function Header() {
               {link.label}
             </Link>
           ))}
-          <Button variant="gold" size="lg" href="/book" className="mt-4">
+          <Button variant="gold" size="lg" href="/booking" className="mt-4">
             Book Now
           </Button>
         </nav>

@@ -97,7 +97,7 @@ function Hero() {
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center px-6 max-w-3xl">
         {/* Logo */}
-        <Logo variant="light" size="lg" className="mb-8" />
+        <Logo variant="light" size="xl" className="mb-8" />
 
         {/* Headline */}
         <h1
@@ -114,7 +114,7 @@ function Hero() {
 
         {/* CTA Button with shimmer */}
         <div className="mt-10 relative group">
-          <Button variant="gold" size="lg" href="/book" className="relative overflow-hidden">
+          <Button variant="gold" size="lg" href="/booking" className="relative overflow-hidden">
             <span className="relative z-10">Book Your Appointment</span>
             {/* Shimmer sweep */}
             <span
@@ -144,29 +144,8 @@ function Hero() {
           style={{ backgroundColor: 'rgba(255,255,255,0.06)' }}
         >
           <div className="mx-auto max-w-4xl px-6 py-4 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-center">
-            <div className="flex items-center gap-1.5">
-              {/* Gold stars */}
-              {[...Array(5)].map((_, i) => (
-                <svg
-                  key={i}
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="#F6D673"
-                >
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              ))}
-              <span className="ml-1 font-body text-sm font-medium text-white">
-                4.9 Rating
-              </span>
-            </div>
-
-            <span className="text-white/30 hidden sm:inline">&middot;</span>
-
-            <span className="font-body text-sm text-white/70">
-              200+ Happy Clients
+            <span className="font-body text-sm font-medium text-white">
+              500+ Happy Clients
             </span>
 
             <span className="text-white/30 hidden sm:inline">&middot;</span>
