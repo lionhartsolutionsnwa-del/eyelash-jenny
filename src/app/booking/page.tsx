@@ -198,6 +198,7 @@ function BookingWizardInner() {
     if (!state.date || !state.service) return
 
     async function loadSlots() {
+      if (!state.date || !state.service) return
       dispatch({ type: 'SET_SLOTS_LOADING', payload: true })
       try {
         const dateStr = formatDateISO(state.date)
