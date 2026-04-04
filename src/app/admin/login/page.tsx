@@ -2,44 +2,45 @@
 
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Logo } from '@/components/shared/Logo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const supabase = createClient();
 
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  function formatPhoneForAuth(raw: string): string {
-    const digits = raw.replace(/\D/g, '');
-    if (digits.length === 10) return `+1${digits}`;
-    if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
-    return `+${digits}`;
-  }
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({
-      phone: formatPhoneForAuth(phone),
-      password,
-    });
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, password }),
+      });
 
-    if (authError) {
-      setError(authError.message);
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || 'Login failed');
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to admin dashboard
+      router.push('/admin');
+      router.refresh();
+    } catch {
+      setError('Connection error. Please try again.');
       setLoading(false);
-      return;
     }
-
-    router.push('/admin');
   }
 
   return (
@@ -53,7 +54,7 @@ export default function AdminLoginPage() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-[0_4px_12px_rgba(16,27,75,0.08),0_12px_32px_rgba(16,27,75,0.06)] p-8">
           <h1 className="font-display text-2xl text-navy text-center tracking-tight mb-6">
-            Admin Login
+            Staff Login
           </h1>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -61,7 +62,7 @@ export default function AdminLoginPage() {
               label="Phone Number"
               name="phone"
               type="tel"
-              placeholder="(555) 123-4567"
+              placeholder="(479) 329-7979"
               required
               value={phone}
               onChange={(e) => setPhone(e.target.value)}

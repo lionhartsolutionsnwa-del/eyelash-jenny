@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Logo } from '@/components/shared/Logo';
 
 const navItems = [
@@ -88,19 +87,55 @@ function getPageTitle(pathname: string) {
   return segment.charAt(0).toUpperCase() + segment.slice(1);
 }
 
+interface AdminUser {
+  id: string;
+  name: string;
+  phone: string;
+  role: string;
+}
+
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [user, setUser] = useState<AdminUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   // Don't render admin shell on login page
   if (pathname === '/admin/login') {
     return <>{children}</>;
   }
 
+  // Verify auth on mount
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/admin/me');
+        if (res.ok) {
+          const data = await res.json();
+          setUser(data.user);
+        } else {
+          router.push('/admin/login');
+        }
+      } catch {
+        router.push('/admin/login');
+      } finally {
+        setAuthChecked(true);
+      }
+    }
+    checkAuth();
+  }, [router]);
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-offwhite flex items-center justify-center">
+        <div className="text-navy font-display text-lg">Loading...</div>
+      </div>
+    );
+  }
+
   async function handleLogout() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    await fetch('/api/admin/logout', { method: 'POST' });
     router.push('/admin/login');
   }
 
@@ -198,6 +233,17 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </h1>
             </div>
 
+            <div className="flex items-center gap-3">
+              <div className="hidden sm:flex flex-col items-end">
+                <span className="text-sm font-medium text-navy font-body">{user?.name}</span>
+                <span className="text-xs text-gray font-body capitalize">{user?.role}</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center">
+                <span className="text-sm font-semibold text-gold-dark">
+                  {user?.name?.charAt(0) ?? '?'}
+                </span>
+              </div>
+            </div>
             <p className="hidden sm:block text-sm text-gray font-body">{formatDate()}</p>
           </div>
         </header>
