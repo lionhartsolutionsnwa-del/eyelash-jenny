@@ -63,6 +63,7 @@ export async function POST(request: NextRequest) {
   }
 
   const input = result.data;
+  console.log('[BOOKING] Input:', JSON.stringify(input));
 
   // 2. Look up the service to get duration
   const { data: service, error: serviceError } = await getAdminClient()
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
 
   if (serviceError || !service) {
     return Response.json(
-      { error: 'Service not found or inactive' },
+      { error: 'Service not found or inactive', debug: { serviceId: input.service_id } },
       { status: 404 }
     );
   }
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
 
   // 4. Re-check slot availability (critical race condition prevention)
   const dayOfWeek = new Date(input.date + 'T00:00:00').getDay();
+  console.log('[BOOKING] dayOfWeek:', dayOfWeek, 'date:', input.date);
 
   // Check blocked date
   const { data: blockedDate } = await getAdminClient()
@@ -108,9 +110,11 @@ export async function POST(request: NextRequest) {
     .eq('day_of_week', dayOfWeek)
     .single();
 
+  console.log('[BOOKING] Availability:', availability);
+
   if (!availability || !availability.is_active) {
     return Response.json(
-      { error: 'Not available on this day' },
+      { error: 'Not available on this day', debug: { dayOfWeek, availability } },
       { status: 409 }
     );
   }
@@ -156,11 +160,14 @@ export async function POST(request: NextRequest) {
     bufferMinutes,
   });
 
+  console.log('[BOOKING] Computed slots:', slots);
+  console.log('[BOOKING] Looking for:', input.start_time);
+
   // Verify the requested slot is still available
   const requestedSlot = slots.find((s) => s.time === input.start_time);
   if (!requestedSlot || !requestedSlot.available) {
     return Response.json(
-      { error: 'This time slot is no longer available' },
+      { error: 'This time slot is no longer available', debug: { requestedTime: input.start_time, availableSlots: slots, availability: availability } },
       { status: 409 }
     );
   }

@@ -110,12 +110,18 @@ function formatDateISO(date: Date): string {
 }
 
 function formatTimeForAPI(time: string): string {
-  // Convert "9:00 AM" to "09:00:00"
-  const [timePart, suffix] = time.split(' ')
-  let [h, m] = timePart.split(':').map(Number)
+  // Convert "9:00 AM" to "09:00:00" (24-hour HH:MM:SS)
+  const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i)
+  if (!match) {
+    // Already in 24h format or invalid
+    return time.length === 5 ? `${time}:00` : time
+  }
+  let h = parseInt(match[1], 10)
+  const m = match[2]
+  const suffix = match[3].toUpperCase()
   if (suffix === 'PM' && h !== 12) h += 12
   if (suffix === 'AM' && h === 12) h = 0
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:00`
+  return `${h.toString().padStart(2, '0')}:${m}:00`
 }
 
 function isBeforeToday(date: Date): boolean {

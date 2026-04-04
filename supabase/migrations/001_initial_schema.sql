@@ -1,6 +1,8 @@
 -- Jenny Professional Eyelash - Initial Database Schema
--- =====================================================
 -- Run this in Supabase → SQL Editor → New query → Run
+
+-- Set timezone to America/Chicago (covers CST/CDT for Jenny's location)
+SET TIME ZONE 'America/Chicago';
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -9,6 +11,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ENUM TYPES
 -- =====================================================
 
+DROP TYPE IF EXISTS booking_status;
 CREATE TYPE booking_status AS ENUM (
   'pending',
   'confirmed',
@@ -20,6 +23,14 @@ CREATE TYPE booking_status AS ENUM (
 -- =====================================================
 -- TABLES
 -- =====================================================
+
+DROP TABLE IF EXISTS bookings CASCADE;
+DROP TABLE IF EXISTS testimonials CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS blocked_dates CASCADE;
+DROP TABLE IF EXISTS break_times CASCADE;
+DROP TABLE IF EXISTS availability CASCADE;
+DROP TABLE IF EXISTS services CASCADE;
 
 -- Services
 CREATE TABLE services (
@@ -150,22 +161,23 @@ INSERT INTO services (name, price, duration_minutes, description, sort_order) VA
   ('Lash Removal', 25.00, 30, 'Safe and gentle removal of existing lash extensions.', 3);
 
 -- Availability (0=Sunday, 1=Monday, ..., 6=Saturday)
+-- Closed Sun & Mon, open Tue-Sat
 INSERT INTO availability (day_of_week, start_time, end_time, is_active) VALUES
-  (0, '09:00', '17:00', FALSE),  -- Sunday off
-  (1, '09:00', '17:00', FALSE),  -- Monday off
-  (2, '09:00', '18:00', TRUE),   -- Tuesday
-  (3, '09:00', '18:00', TRUE),   -- Wednesday
-  (4, '09:00', '18:00', TRUE),   -- Thursday
-  (5, '09:00', '18:00', TRUE),   -- Friday
-  (6, '10:00', '16:00', TRUE);   -- Saturday
+  (0, '09:00'::time, '17:00'::time, FALSE),  -- Sunday closed
+  (1, '09:00'::time, '17:00'::time, FALSE),  -- Monday closed
+  (2, '09:00'::time, '18:00'::time, TRUE),   -- Tuesday
+  (3, '09:00'::time, '18:00'::time, TRUE),   -- Wednesday
+  (4, '09:00'::time, '18:00'::time, TRUE),   -- Thursday
+  (5, '09:00'::time, '18:00'::time, TRUE),   -- Friday
+  (6, '10:00'::time, '16:00'::time, TRUE);   -- Saturday
 
 -- Break times (lunch for working days)
 INSERT INTO break_times (day_of_week, start_time, end_time, label) VALUES
-  (2, '12:30', '13:30', 'Lunch Break'),
-  (3, '12:30', '13:30', 'Lunch Break'),
-  (4, '12:30', '13:30', 'Lunch Break'),
-  (5, '12:30', '13:30', 'Lunch Break'),
-  (6, '12:30', '13:30', 'Lunch Break');
+  (2, '12:30'::time, '13:30'::time, 'Lunch Break'),
+  (3, '12:30'::time, '13:30'::time, 'Lunch Break'),
+  (4, '12:30'::time, '13:30'::time, 'Lunch Break'),
+  (5, '12:30'::time, '13:30'::time, 'Lunch Break'),
+  (6, '12:30'::time, '13:30'::time, 'Lunch Break');
 
 -- Testimonials
 INSERT INTO testimonials (client_name, rating, content, service_type, is_featured) VALUES
@@ -174,11 +186,11 @@ INSERT INTO testimonials (client_name, rating, content, service_type, is_feature
   ('Jessica L.', 5, 'I was nervous about getting lash extensions for the first time, but Jenny made me feel so comfortable. She explained everything and the results exceeded my expectations.', 'Classic Lashes', TRUE),
   ('Amanda K.', 4, 'Great experience from booking to the actual appointment. Jenny is professional, skilled, and genuinely cares about her clients. My lashes lasted beautifully for weeks.', 'Hybrid Lashes', FALSE);
 
--- Settings
+-- Settings (using jsonb with numeric values for correct type handling)
 INSERT INTO settings (key, value) VALUES
   ('business_name', '"Jenny Professional Eyelash"'::jsonb),
   ('business_phone', '"(555) 123-4567"'::jsonb),
   ('slot_interval_minutes', '30'::jsonb),
-  ('buffer_between_bookings_minutes', '15'::jsonb),
+  ('buffer_minutes', '15'::jsonb),
   ('sms_notifications_enabled', 'false'::jsonb),
-  ('timezone', '"America/Los_Angeles"'::jsonb);
+  ('timezone', '"America/Chicago"'::jsonb);
