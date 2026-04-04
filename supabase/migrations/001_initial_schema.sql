@@ -1,5 +1,6 @@
 -- Jenny Professional Eyelash - Initial Database Schema
 -- =====================================================
+-- Run this in Supabase → SQL Editor → New query → Run
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -107,56 +108,6 @@ CREATE INDEX idx_bookings_date_status ON bookings(date, status);
 CREATE INDEX idx_bookings_client_phone ON bookings(client_phone);
 
 -- =====================================================
--- TRIGGER FUNCTIONS
--- =====================================================
-
--- Auto-update updated_at column
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = NOW();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_services_updated_at
-  BEFORE UPDATE ON services
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER trg_bookings_updated_at
-  BEFORE UPDATE ON bookings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
-CREATE TRIGGER trg_settings_updated_at
-  BEFORE UPDATE ON settings
-  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
-
--- Double-booking prevention
-CREATE OR REPLACE FUNCTION prevent_double_booking()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM bookings
-    WHERE date = NEW.date
-      AND id != COALESCE(NEW.id, '00000000-0000-0000-0000-000000000000')
-      AND status NOT IN ('cancelled', 'no_show')
-      AND (
-        (NEW.start_time >= start_time AND NEW.start_time < end_time)
-        OR (NEW.end_time > start_time AND NEW.end_time <= end_time)
-        OR (NEW.start_time <= start_time AND NEW.end_time >= end_time)
-      )
-  ) THEN
-    RAISE EXCEPTION 'Time slot overlaps with an existing booking';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trg_prevent_double_booking
-  BEFORE INSERT OR UPDATE ON bookings
-  FOR EACH ROW EXECUTE FUNCTION prevent_double_booking();
-
--- =====================================================
 -- ROW LEVEL SECURITY
 -- =====================================================
 
@@ -169,70 +120,24 @@ ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 
 -- Public read access
-CREATE POLICY "Public can read active services"
-  ON services FOR SELECT
-  USING (true);
-
-CREATE POLICY "Public can read availability"
-  ON availability FOR SELECT
-  USING (true);
-
-CREATE POLICY "Public can read break times"
-  ON break_times FOR SELECT
-  USING (true);
-
-CREATE POLICY "Public can read blocked dates"
-  ON blocked_dates FOR SELECT
-  USING (true);
-
-CREATE POLICY "Public can read active testimonials"
-  ON testimonials FOR SELECT
-  USING (true);
-
-CREATE POLICY "Public can read settings"
-  ON settings FOR SELECT
-  USING (true);
+CREATE POLICY "Public can read active services" ON services FOR SELECT USING (true);
+CREATE POLICY "Public can read availability" ON availability FOR SELECT USING (true);
+CREATE POLICY "Public can read break times" ON break_times FOR SELECT USING (true);
+CREATE POLICY "Public can read blocked dates" ON blocked_dates FOR SELECT USING (true);
+CREATE POLICY "Public can read active testimonials" ON testimonials FOR SELECT USING (true);
+CREATE POLICY "Public can read settings" ON settings FOR SELECT USING (true);
 
 -- Public insert for bookings
-CREATE POLICY "Public can create bookings"
-  ON bookings FOR INSERT
-  WITH CHECK (true);
+CREATE POLICY "Public can create bookings" ON bookings FOR INSERT WITH CHECK (true);
 
 -- Authenticated full access
-CREATE POLICY "Authenticated users have full access to services"
-  ON services FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Authenticated users have full access to availability"
-  ON availability FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Authenticated users have full access to break_times"
-  ON break_times FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Authenticated users have full access to blocked_dates"
-  ON blocked_dates FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Authenticated users have full access to bookings"
-  ON bookings FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Authenticated users have full access to testimonials"
-  ON testimonials FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Authenticated users have full access to settings"
-  ON settings FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to services" ON services FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to availability" ON availability FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to break_times" ON break_times FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to blocked_dates" ON blocked_dates FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to bookings" ON bookings FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to testimonials" ON testimonials FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users have full access to settings" ON settings FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 -- =====================================================
 -- SEED DATA
@@ -271,9 +176,9 @@ INSERT INTO testimonials (client_name, rating, content, service_type, is_feature
 
 -- Settings
 INSERT INTO settings (key, value) VALUES
-  ('business_name', '"Jenny Professional Eyelash"'),
-  ('business_phone', '"(555) 123-4567"'),
-  ('slot_interval_minutes', '30'),
-  ('buffer_between_bookings_minutes', '15'),
-  ('sms_notifications_enabled', 'true'),
-  ('timezone', '"America/Los_Angeles"');
+  ('business_name', '"Jenny Professional Eyelash"'::jsonb),
+  ('business_phone', '"(555) 123-4567"'::jsonb),
+  ('slot_interval_minutes', '30'::jsonb),
+  ('buffer_between_bookings_minutes', '15'::jsonb),
+  ('sms_notifications_enabled', 'false'::jsonb),
+  ('timezone', '"America/Los_Angeles"'::jsonb);
