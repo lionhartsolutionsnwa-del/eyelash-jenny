@@ -241,24 +241,28 @@ function BookingWizardInner() {
     dispatch({ type: 'SUBMIT' })
 
     try {
+      const payload = {
+        client_name: state.name.trim(),
+        client_phone: state.phone.replace(/\D/g, ''),
+        service_id: state.service!.id,
+        date: formatDateISO(state.date!),
+        start_time: formatTimeForAPI(state.time),
+      }
+      if (state.email.trim()) payload.client_email = state.email.trim()
+      if (state.notes.trim()) payload.notes = state.notes.trim()
+
       const response = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          client_name: state.name,
-          client_phone: state.phone,
-          client_email: state.email || null,
-          service_id: state.service!.id,
-          date: formatDateISO(state.date!),
-          start_time: formatTimeForAPI(state.time),
-          notes: state.notes || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        dispatch({ type: 'SUBMIT_ERROR', payload: data.error || 'Booking failed. Please try again.' })
+        // Show detailed error for debugging
+        const errorMsg = data.error || data.issues?.map((i: { message: string }) => i.message).join(', ') || 'Booking failed. Please try again.'
+        dispatch({ type: 'SUBMIT_ERROR', payload: errorMsg })
         return
       }
 
