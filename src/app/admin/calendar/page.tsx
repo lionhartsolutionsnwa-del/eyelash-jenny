@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { useLang } from '@/contexts/LanguageContext';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -100,6 +101,7 @@ function getWeekDates(baseDate: Date): string[] {
 /* ── Component ─────────────────────────────────────────── */
 
 export default function CalendarPage() {
+  const { lang } = useLang();
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null);
@@ -139,7 +141,8 @@ export default function CalendarPage() {
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 4l-4 4 4 4" /></svg>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate(0)}>
-              Today
+              <span className="only-en">Today</span>
+              <span className="only-zh">今天</span>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate(1)}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 4l4 4-4 4" /></svg>
@@ -161,7 +164,7 @@ export default function CalendarPage() {
                     : 'text-navy-light hover:text-navy',
                 ].join(' ')}
               >
-                {mode}
+                {mode === 'day' ? (<><span className="only-en">Day</span><span className="only-zh">日</span></>) : mode === 'week' ? (<><span className="only-en">Week</span><span className="only-zh">周</span></>) : (<><span className="only-en">Month</span><span className="only-zh">月</span></>)}
               </button>
             ))}
           </div>
@@ -283,7 +286,13 @@ export default function CalendarPage() {
                 <p className="text-xs text-gray font-body uppercase tracking-wider">Status</p>
                 <div className="mt-1">
                   <Badge variant={selectedBooking.status} size="sm">
-                    {selectedBooking.status.charAt(0).toUpperCase() + selectedBooking.status.slice(1)}
+                    {selectedBooking.status === 'confirmed' ? (
+                      <><span className="only-en">Confirmed</span><span className="only-zh">已确认</span></>
+                    ) : selectedBooking.status === 'pending' ? (
+                      <><span className="only-en">Pending</span><span className="only-zh">待确认</span></>
+                    ) : (
+                      <><span className="only-en">Completed</span><span className="only-zh">已完成</span></>
+                    )}
                   </Badge>
                 </div>
               </div>

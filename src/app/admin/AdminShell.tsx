@@ -4,10 +4,12 @@ import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Logo } from '@/components/shared/Logo';
+import { useLang } from '@/contexts/LanguageContext';
 
 const navItems = [
   {
-    label: 'Dashboard',
+    labelEn: 'Dashboard',
+    labelZh: '仪表盘',
     href: '/admin',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -19,7 +21,8 @@ const navItems = [
     ),
   },
   {
-    label: 'Calendar',
+    labelEn: 'Calendar',
+    labelZh: '日历',
     href: '/admin/calendar',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -30,7 +33,8 @@ const navItems = [
     ),
   },
   {
-    label: 'Bookings',
+    labelEn: 'Bookings',
+    labelZh: '预约',
     href: '/admin/bookings',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -40,7 +44,8 @@ const navItems = [
     ),
   },
   {
-    label: 'Availability',
+    labelEn: 'Availability',
+    labelZh: '可用时间',
     href: '/admin/availability',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -50,7 +55,8 @@ const navItems = [
     ),
   },
   {
-    label: 'Clients',
+    labelEn: 'Clients',
+    labelZh: '客户',
     href: '/admin/clients',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -60,7 +66,8 @@ const navItems = [
     ),
   },
   {
-    label: 'Settings',
+    labelEn: 'Settings',
+    labelZh: '设置',
     href: '/admin/settings',
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -81,10 +88,17 @@ function formatDate() {
 }
 
 function getPageTitle(pathname: string) {
-  if (pathname === '/admin') return 'Dashboard';
-  const segment = pathname.split('/').pop();
-  if (!segment) return 'Dashboard';
-  return segment.charAt(0).toUpperCase() + segment.slice(1);
+  const titles: Record<string, { en: string; zh: string }> = {
+    '/admin': { en: 'Dashboard', zh: '仪表盘' },
+    calendar: { en: 'Calendar', zh: '日历' },
+    bookings: { en: 'Bookings', zh: '预约管理' },
+    availability: { en: 'Availability', zh: '可用时间' },
+    clients: { en: 'Clients', zh: '客户管理' },
+    settings: { en: 'Settings', zh: '设置' },
+  };
+  if (pathname === '/admin') return titles['/admin'];
+  const segment = pathname.split('/').pop() ?? '';
+  return titles[segment] ?? { en: segment.charAt(0).toUpperCase() + segment.slice(1), zh: segment };
 }
 
 interface AdminUser {
@@ -100,6 +114,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<AdminUser | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const { lang, toggleLang } = useLang();
 
   // Don't render admin shell on login page
   if (pathname === '/admin/login') {
@@ -190,7 +205,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 ].join(' ')}
               >
                 <span className={active ? 'text-gold-dark' : 'text-gray'}>{item.icon}</span>
-                {item.label}
+                <span>
+                  <span className="only-en">{item.labelEn}</span>
+                  <span className="only-zh">{item.labelZh}</span>
+                </span>
               </Link>
             );
           })}
@@ -206,7 +224,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <path d="M7 17H4a1 1 0 01-1-1V4a1 1 0 011-1h3" />
               <path d="M13 14l4-4-4-4M17 10H7" />
             </svg>
-            Logout
+            <span className="only-en">Logout</span>
+                <span className="only-zh">退出</span>
           </button>
         </div>
       </aside>
@@ -229,11 +248,25 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </button>
 
               <h1 className="font-display text-xl lg:text-2xl text-navy tracking-tight">
-                {getPageTitle(pathname)}
+                <span className="only-en">{getPageTitle(pathname).en}</span>
+                <span className="only-zh">{getPageTitle(pathname).zh}</span>
               </h1>
             </div>
 
             <div className="flex items-center gap-3">
+              {/* Language Toggle */}
+              <button
+                onClick={toggleLang}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-body font-semibold border border-gold/40 bg-gold/5 hover:bg-gold/10 text-gold-dark transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-gold cursor-pointer"
+                title="Toggle Language / 切换语言"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20" />
+                </svg>
+                <span>{lang === 'en' ? '中文' : 'EN'}</span>
+              </button>
+
               <div className="hidden sm:flex flex-col items-end">
                 <span className="text-sm font-medium text-navy font-body">{user?.name}</span>
                 <span className="text-xs text-gray font-body capitalize">{user?.role}</span>

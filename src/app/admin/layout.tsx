@@ -1,6 +1,7 @@
 import { AdminShell } from './AdminShell';
 import { ServiceWorkerRegistrar } from './ServiceWorkerRegistrar';
 import { InstallPrompt } from '@/components/admin/InstallPrompt';
+import { LangProvider } from '@/contexts/LanguageContext';
 
 export const metadata = {
   title: 'Admin | Jenny Professional Eyelash',
@@ -18,7 +19,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <LangProvider>
       <link rel="manifest" href="/manifest.json" />
       <link rel="apple-touch-icon" href="/icons/icon-192.svg" />
       <ServiceWorkerRegistrar />
@@ -26,6 +27,6 @@ export default function AdminLayout({
         {children}
         <InstallPrompt />
       </AdminShell>
-    </>
+    </LangProvider>
   );
 }

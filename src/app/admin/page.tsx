@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/Badge';
 
 const stats = [
   {
-    label: "Today's Bookings",
+    labelEn: "Today's Bookings",
+    labelZh: '今日预约',
     value: '6',
-    comparison: '+2 from yesterday',
+    comparisonEn: '+2 from yesterday',
+    comparisonZh: '比昨天多2个',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="4" width="18" height="17" rx="2" />
@@ -17,9 +19,11 @@ const stats = [
     ),
   },
   {
-    label: "This Week's Revenue",
+    labelEn: "This Week's Revenue",
+    labelZh: '本周收入',
     value: '$1,280',
-    comparison: '+18% vs last week',
+    comparisonEn: '+18% vs last week',
+    comparisonZh: '比上周增长18%',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2v20M17 5H9.5a3 3 0 000 6h5a3 3 0 010 6H7" />
@@ -27,9 +31,11 @@ const stats = [
     ),
   },
   {
-    label: 'New Clients This Month',
+    labelEn: 'New Clients This Month',
+    labelZh: '本月新客户',
     value: '12',
-    comparison: '+4 from last month',
+    comparisonEn: '+4 from last month',
+    comparisonZh: '比上月多4个',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2" />
@@ -39,9 +45,11 @@ const stats = [
     ),
   },
   {
-    label: 'Total Clients',
+    labelEn: 'Total Clients',
+    labelZh: '客户总数',
     value: '87',
-    comparison: 'All time',
+    comparisonEn: 'All time',
+    comparisonZh: '历史累计',
     icon: (
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="7" r="4" />
@@ -68,14 +76,20 @@ export default function AdminDashboardPage() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-6">
         {stats.map((stat) => (
-          <Card key={stat.label} className="p-5">
+          <Card key={stat.labelEn} className="p-5">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-sm text-gray font-body">{stat.label}</p>
+                <p className="text-sm text-gray font-body">
+                  <span className="only-en">{stat.labelEn}</span>
+                  <span className="only-zh">{stat.labelZh}</span>
+                </p>
                 <p className="text-2xl font-display font-semibold text-navy tracking-tight mt-1">
                   {stat.value}
                 </p>
-                <p className="text-xs text-navy-light font-body mt-1">{stat.comparison}</p>
+                <p className="text-xs text-navy-light font-body mt-1">
+                  <span className="only-en">{stat.comparisonEn}</span>
+                  <span className="only-zh">{stat.comparisonZh}</span>
+                </p>
               </div>
               <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gold/10 text-gold-dark shrink-0">
                 {stat.icon}
@@ -90,7 +104,8 @@ export default function AdminDashboardPage() {
         <div className="xl:col-span-2">
           <Card className="p-6">
             <h2 className="font-display text-lg text-navy tracking-tight mb-4">
-              Today&apos;s Schedule
+              <span className="only-en">Today&apos;s Schedule</span>
+              <span className="only-zh">今日日程</span>
             </h2>
             <div className="space-y-3">
               {todaysBookings.map((booking, i) => (
@@ -120,7 +135,8 @@ export default function AdminDashboardPage() {
         <div>
           <Card className="p-6">
             <h2 className="font-display text-lg text-navy tracking-tight mb-4">
-              Quick Actions
+              <span className="only-en">Quick Actions</span>
+              <span className="only-zh">快捷操作</span>
             </h2>
             <div className="space-y-3">
               <a
@@ -135,8 +151,14 @@ export default function AdminDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-body font-medium text-navy">Block Date</p>
-                  <p className="text-xs text-gray font-body">Mark dates as unavailable</p>
+                  <p className="text-sm font-body font-medium text-navy">
+                    <span className="only-en">Block Date</span>
+                    <span className="only-zh">封锁日期</span>
+                  </p>
+                  <p className="text-xs text-gray font-body">
+                    <span className="only-en">Mark dates as unavailable</span>
+                    <span className="only-zh">标记不可用日期</span>
+                  </p>
                 </div>
               </a>
 
@@ -151,8 +173,14 @@ export default function AdminDashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-body font-medium text-navy">Add Service</p>
-                  <p className="text-xs text-gray font-body">Create a new service offering</p>
+                  <p className="text-sm font-body font-medium text-navy">
+                    <span className="only-en">Add Service</span>
+                    <span className="only-zh">添加服务</span>
+                  </p>
+                  <p className="text-xs text-gray font-body">
+                    <span className="only-en">Create a new service offering</span>
+                    <span className="only-zh">创建新的服务项目</span>
+                  </p>
                 </div>
               </a>
             </div>

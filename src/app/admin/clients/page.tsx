@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/Card';
+import { useLang } from '@/contexts/LanguageContext';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -38,6 +39,7 @@ const mockClients: Client[] = [
 /* ── Component ─────────────────────────────────────────── */
 
 export default function ClientsPage() {
+  const { lang } = useLang();
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
@@ -101,7 +103,11 @@ export default function ClientsPage() {
           </svg>
           <input
             type="text"
-            placeholder="Search clients by name, email, or phone..."
+            placeholder={
+              lang === 'en'
+                ? 'Search clients by name, email, or phone...'
+                : '按姓名、邮箱或电话搜索...'
+            }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2 text-sm font-body text-navy bg-offwhite rounded-xl border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none transition-[border-color,box-shadow] duration-200"
@@ -120,17 +126,21 @@ export default function ClientsPage() {
                     onClick={() => handleSort('name')}
                     className="flex items-center gap-1 text-xs font-medium text-gray uppercase tracking-wider cursor-pointer hover:text-navy transition-opacity duration-150"
                   >
-                    Name <SortIcon column="name" />
+                    <span className="only-en">Name</span><span className="only-zh">姓名</span> <SortIcon column="name" />
                   </button>
                 </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray uppercase tracking-wider">Phone</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray uppercase tracking-wider">Email</th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray uppercase tracking-wider">
+                  <span className="only-en">Phone</span><span className="only-zh">电话</span>
+                </th>
+                <th className="text-left px-4 py-3 text-xs font-medium text-gray uppercase tracking-wider">
+                  <span className="only-en">Email</span><span className="only-zh">邮箱</span>
+                </th>
                 <th className="text-left px-4 py-3">
                   <button
                     onClick={() => handleSort('visits')}
                     className="flex items-center gap-1 text-xs font-medium text-gray uppercase tracking-wider cursor-pointer hover:text-navy transition-opacity duration-150"
                   >
-                    Visits <SortIcon column="visits" />
+                    <span className="only-en">Visits</span><span className="only-zh">次数</span> <SortIcon column="visits" />
                   </button>
                 </th>
                 <th className="text-left px-4 py-3">
@@ -138,7 +148,7 @@ export default function ClientsPage() {
                     onClick={() => handleSort('lastVisit')}
                     className="flex items-center gap-1 text-xs font-medium text-gray uppercase tracking-wider cursor-pointer hover:text-navy transition-opacity duration-150"
                   >
-                    Last Visit <SortIcon column="lastVisit" />
+                    <span className="only-en">Last Visit</span><span className="only-zh">最近到店</span> <SortIcon column="lastVisit" />
                   </button>
                 </th>
                 <th className="text-right px-4 py-3">
@@ -146,7 +156,7 @@ export default function ClientsPage() {
                     onClick={() => handleSort('totalSpent')}
                     className="flex items-center gap-1 text-xs font-medium text-gray uppercase tracking-wider cursor-pointer hover:text-navy transition-opacity duration-150 ml-auto"
                   >
-                    Total Spent <SortIcon column="totalSpent" />
+                    <span className="only-en">Total Spent</span><span className="only-zh">累计消费</span> <SortIcon column="totalSpent" />
                   </button>
                 </th>
               </tr>

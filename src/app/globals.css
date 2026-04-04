@@ -105,3 +105,9 @@ html {
   );
   animation: shimmer 2.5s ease-in-out infinite;
 }
+
+/* ── Language Translation (EN ↔ ZH) ─────────────────────── */
+html[data-lang="zh"] .only-en,
+html[data-lang="en"] .only-zh {
+  display: none !important;
+}
