@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
-import { computeAvailableSlots } from '@/lib/slots';
+import { computeAvailableSlots, formatTimeDisplay } from '@/lib/slots';
 
 // GET /api/availability/slots?date=YYYY-MM-DD&service_id=UUID
 // Public: compute available time slots for a given date and service
@@ -111,5 +111,11 @@ export async function GET(request: NextRequest) {
     bufferMinutes,
   });
 
-  return Response.json({ slots });
+  // Format times for frontend display (e.g. "09:00" -> "9:00 AM")
+  const formattedSlots = slots.map((s) => ({
+    ...s,
+    time: formatTimeDisplay(s.time),
+  }));
+
+  return Response.json({ slots: formattedSlots });
 }
