@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { useLang } from '@/contexts/LanguageContext';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -31,6 +32,7 @@ const initialServices: Service[] = [
 /* ── Component ─────────────────────────────────────────── */
 
 export default function SettingsPage() {
+  const { lang } = useLang();
   // Business Info
   const [businessName, setBusinessName] = useState('Jenny Professional Eyelash');
   const [businessPhone, setBusinessPhone] = useState('(555) 000-1234');
@@ -100,7 +102,7 @@ export default function SettingsPage() {
     <div className="space-y-6 max-w-4xl">
       {/* Section 1: Business Info */}
       <Card className="p-6">
-        <h2 className="font-display text-lg text-navy tracking-tight mb-4">Business Information</h2>
+        <h2 className="font-display text-lg text-navy tracking-tight mb-4"><span className="only-en">Business Information</span><span className="only-zh">商家信息</span></h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Business Name"
@@ -138,19 +140,19 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="mt-4">
-          <Button variant="gold" size="sm">Save Business Info</Button>
+          <Button variant="gold" size="sm"><span className="only-en">Save Business Info</span><span className="only-zh">保存商家信息</span></Button>
         </div>
       </Card>
 
       {/* Section 2: Services Management */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-lg text-navy tracking-tight">Services</h2>
+          <h2 className="font-display text-lg text-navy tracking-tight"><span className="only-en">Services</span><span className="only-zh">服务管理</span></h2>
           <Button variant="secondary" size="sm" onClick={addService}>
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
               <path d="M7 1v12M1 7h12" />
             </svg>
-            Add Service
+            <span className="only-en">Add Service</span><span className="only-zh">添加服务</span>
           </Button>
         </div>
 
@@ -174,7 +176,7 @@ export default function SettingsPage() {
                         type="text"
                         value={service.name}
                         onChange={(e) => updateService(service.id, 'name', e.target.value)}
-                        placeholder="Service name"
+                        placeholder={lang === 'en' ? "Service name" : "服务名称"}
                         className="px-3 py-2 text-sm font-body text-navy bg-white rounded-lg border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none"
                       />
                       <input
@@ -196,7 +198,7 @@ export default function SettingsPage() {
                       type="text"
                       value={service.description}
                       onChange={(e) => updateService(service.id, 'description', e.target.value)}
-                      placeholder="Description"
+                      placeholder={lang === 'en' ? "Description" : "服务描述"}
                       className="w-full px-3 py-2 text-sm font-body text-navy bg-white rounded-lg border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none"
                     />
                     <div className="flex items-center justify-between">
@@ -258,7 +260,7 @@ export default function SettingsPage() {
           {/* SMS toggle */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-offwhite/60">
             <div>
-              <p className="text-sm font-body font-medium text-navy">SMS Notifications</p>
+              <p className="text-sm font-body font-medium text-navy"><span className="only-en">SMS Notifications</span><span className="only-zh">短信通知</span></p>
               <p className="text-xs text-navy-light font-body">Send booking confirmations and reminders via SMS</p>
             </div>
             <Toggle checked={smsEnabled} onChange={setSmsEnabled} />
@@ -296,7 +298,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-4">
-          <Button variant="gold" size="sm">Save Notification Settings</Button>
+          <Button variant="gold" size="sm" onClick={() => window.alert(lang === 'en' ? "Notification settings saved!" : "通知设置已保存！")}>Save Notification Settings</Button>
         </div>
       </Card>
     </div>

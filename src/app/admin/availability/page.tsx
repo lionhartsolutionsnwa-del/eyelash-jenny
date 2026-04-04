@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { useLang } from '@/contexts/LanguageContext';
 
 /* ── Types ─────────────────────────────────────────────── */
 
@@ -69,6 +70,7 @@ function formatDate(dateStr: string) {
 /* ── Component ─────────────────────────────────────────── */
 
 export default function AvailabilityPage() {
+  const { lang } = useLang();
   const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule);
   const [breaks, setBreaks] = useState<BreakTime[]>(initialBreaks);
   const [blocked, setBlocked] = useState<BlockedDate[]>(initialBlocked);
@@ -141,7 +143,10 @@ export default function AvailabilityPage() {
     <div className="space-y-6">
       {/* Section 1: Weekly Schedule */}
       <Card className="p-6">
-        <h2 className="font-display text-lg text-navy tracking-tight mb-4">Weekly Schedule</h2>
+        <h2 className="font-display text-lg text-navy tracking-tight mb-4">
+          <span className="only-en">Weekly Schedule</span>
+          <span className="only-zh">每周营业时间</span>
+        </h2>
         <div className="space-y-3">
           {schedule.map((day, i) => (
             <div
@@ -184,7 +189,10 @@ export default function AvailabilityPage() {
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
-                  <span className="text-xs text-gray">to</span>
+                  <span className="text-xs text-gray">
+                    <span className="only-en">to</span>
+                    <span className="only-zh">至</span>
+                  </span>
                   <select
                     value={day.end}
                     onChange={(e) => updateSchedule(i, 'end', e.target.value)}
@@ -198,19 +206,28 @@ export default function AvailabilityPage() {
               )}
 
               {!day.enabled && (
-                <span className="text-xs text-gray font-body">Closed</span>
+                <span className="text-xs text-gray font-body">
+                  <span className="only-en">Closed</span>
+                  <span className="only-zh">休息</span>
+                </span>
               )}
             </div>
           ))}
         </div>
         <div className="mt-4">
-          <Button variant="gold" size="sm">Save Schedule</Button>
+          <Button variant="gold" size="sm" onClick={() => window.alert(lang === 'en' ? 'Schedule saved!' : '时间表已保存！')}>
+            <span className="only-en">Save Schedule</span>
+            <span className="only-zh">保存时间表</span>
+          </Button>
         </div>
       </Card>
 
       {/* Section 2: Break Times */}
       <Card className="p-6">
-        <h2 className="font-display text-lg text-navy tracking-tight mb-4">Break Times</h2>
+        <h2 className="font-display text-lg text-navy tracking-tight mb-4">
+          <span className="only-en">Break Times</span>
+          <span className="only-zh">休息时间</span>
+        </h2>
 
         <div className="space-y-2 mb-4">
           {breaks.map((brk) => (
@@ -238,7 +255,9 @@ export default function AvailabilityPage() {
         {/* Add break form */}
         <div className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-4 rounded-xl border border-gray-light bg-white">
           <div>
-            <label className="block text-xs text-gray font-body mb-1">Day</label>
+            <label className="block text-xs text-gray font-body mb-1">
+              <span className="only-en">Day</span><span className="only-zh">日期</span>
+            </label>
             <select
               value={newBreakDay}
               onChange={(e) => setNewBreakDay(e.target.value)}
@@ -250,7 +269,9 @@ export default function AvailabilityPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray font-body mb-1">Start</label>
+            <label className="block text-xs text-gray font-body mb-1">
+              <span className="only-en">Start</span><span className="only-zh">开始</span>
+            </label>
             <select
               value={newBreakStart}
               onChange={(e) => setNewBreakStart(e.target.value)}
@@ -262,7 +283,9 @@ export default function AvailabilityPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-gray font-body mb-1">End</label>
+            <label className="block text-xs text-gray font-body mb-1">
+              <span className="only-en">End</span><span className="only-zh">结束</span>
+            </label>
             <select
               value={newBreakEnd}
               onChange={(e) => setNewBreakEnd(e.target.value)}
@@ -274,7 +297,7 @@ export default function AvailabilityPage() {
             </select>
           </div>
           <Button variant="secondary" size="sm" onClick={addBreak}>
-            Add Break
+            <span className="only-en">Add Break</span><span className="only-zh">添加休息</span>
           </Button>
         </div>
       </Card>
@@ -319,7 +342,7 @@ export default function AvailabilityPage() {
                 );
               })}
             </div>
-            <p className="text-[10px] text-gray font-body mt-2">Click a date to block/unblock it</p>
+            <p className="text-[10px] text-gray font-body mt-2"><span className="only-en">Click a date to block/unblock it</span><span className="only-zh">点击日期来封锁/解除</span></p>
           </div>
 
           {/* Blocked dates list + form */}
@@ -348,13 +371,13 @@ export default function AvailabilityPage() {
                 </div>
               ))}
               {blocked.length === 0 && (
-                <p className="text-sm text-gray font-body py-4 text-center">No blocked dates</p>
+                <p className="text-sm text-gray font-body py-4 text-center"><span className="only-en">No blocked dates</span><span className="only-zh">暂无封锁日期</span></p>
               )}
             </div>
 
             {/* Add blocked date form */}
             <div className="p-4 rounded-xl border border-gray-light bg-white space-y-3">
-              <p className="text-xs text-gray font-body uppercase tracking-wider font-medium">Add Blocked Date</p>
+              <p className="text-xs text-gray font-body uppercase tracking-wider font-medium"><span className="only-en">Add Blocked Date</span><span className="only-zh">添加封锁日期</span></p>
               <input
                 type="date"
                 value={newBlockDate}
@@ -363,13 +386,14 @@ export default function AvailabilityPage() {
               />
               <input
                 type="text"
-                placeholder="Reason (optional)"
+                placeholder={lang === 'en' ? "Reason (optional)" : "原因（可选）"}
                 value={newBlockReason}
                 onChange={(e) => setNewBlockReason(e.target.value)}
                 className="w-full px-3 py-2 text-sm font-body text-navy bg-offwhite rounded-lg border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none"
               />
               <Button variant="gold" size="sm" onClick={addBlockedDate}>
-                Block Date
+                <span className="only-en">Block Date</span>
+                <span className="only-zh">封锁日期</span>
               </Button>
             </div>
           </div>
