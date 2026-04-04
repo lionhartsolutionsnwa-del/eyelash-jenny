@@ -241,7 +241,7 @@ function BookingWizardInner() {
     dispatch({ type: 'SUBMIT' })
 
     try {
-      const payload = {
+      const payload: Record<string, string> = {
         client_name: state.name.trim(),
         client_phone: state.phone.replace(/\D/g, ''),
         service_id: state.service!.id,
