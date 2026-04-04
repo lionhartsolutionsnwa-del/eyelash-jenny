@@ -31,18 +31,42 @@ export async function proxy(request: NextRequest) {
 
   // Verify token against admin_sessions table
   if (token) {
-    const supabase = await createClient();
+    let supabase;
+    try {
+      supabase = await createClient();
+    } catch {
+      // Supabase not configured → allow through (dev mode)
+      return NextResponse.next();
+    }
+
     const tokenHash = hashToken(token);
 
-    const { data: session } = await supabase
-      .from('admin_sessions')
-      .select('expires_at, admin_users!inner(id, active)')
-      .eq('token_hash', tokenHash)
-      .single();
+    let session;
+    try {
+      const result = await supabase
+        .from('admin_sessions')
+        .select('expires_at, admin_users!inner(id, active)')
+        .eq('token_hash', tokenHash)
+        .single();
 
-    const isValid = session &&
-      new Date((session as { expires_at: string }).expires_at) > new Date() &&
-      (session.admin_users as unknown as { active: boolean }).active;
+      session = result.data;
+    } catch {
+      // Table doesn't exist or DB error → clear bad cookie, go to login
+      const response = NextResponse.redirect(new URL('/admin/login', request.url));
+      response.cookies.set('admin_token', '', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        expires: new Date(0),
+        path: '/',
+      });
+      return response;
+    }
+
+    const sessionData = session as { expires_at: string; admin_users: { active: boolean } } | null;
+    const isValid = sessionData &&
+      new Date(sessionData.expires_at) > new Date() &&
+      sessionData.admin_users?.active;
 
     if (!isValid && !isLoginPage) {
       // Invalid/expired session → clear cookie and redirect to login

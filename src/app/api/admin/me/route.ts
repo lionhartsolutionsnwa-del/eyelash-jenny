@@ -14,26 +14,28 @@ export async function GET(request: NextRequest) {
   }
 
   const tokenHash = hashToken(token);
-  const supabase = await createClient();
 
-  // Find session and join with user
-  const { data: session, error } = await supabase
-    .from('admin_sessions')
-    .select(`
-      id,
-      expires_at,
-      admin_users!inner (
-        id,
-        name,
-        phone,
-        role,
-        active
-      )
-    `)
-    .eq('token_hash', tokenHash)
-    .single();
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch {
+    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+  }
 
-  if (error || !session) {
+  // Find the session
+  let session;
+  try {
+    const result = await supabase
+      .from('admin_sessions')
+      .select('id, expires_at, user_id')
+      .eq('token_hash', tokenHash)
+      .single();
+    session = result.data;
+  } catch {
+    return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
+  }
+
+  if (!session) {
     return NextResponse.json({ error: 'Invalid or expired session' }, { status: 401 });
   }
 
@@ -43,9 +45,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Session expired' }, { status: 401 });
   }
 
-  const user = session.admin_users as unknown as {
-    id: string; name: string; phone: string; role: string; active: boolean
-  };
+  // Fetch user separately
+  const { data: user, error: userError } = await supabase
+    .from('admin_users')
+    .select('id, name, phone, role, active')
+    .eq('id', session.user_id)
+    .single();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: 'User not found' }, { status: 401 });
+  }
 
   if (!user.active) {
     return NextResponse.json({ error: 'Account disabled' }, { status: 401 });
