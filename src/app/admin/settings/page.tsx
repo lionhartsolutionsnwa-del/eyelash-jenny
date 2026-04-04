@@ -183,14 +183,14 @@ export default function SettingsPage() {
                         type="number"
                         value={service.price}
                         onChange={(e) => updateService(service.id, 'price', parseInt(e.target.value) || 0)}
-                        placeholder="Price ($)"
+                        placeholder={lang === 'en' ? "Price ($)" : "价格 ($)"}
                         className="px-3 py-2 text-sm font-body text-navy bg-white rounded-lg border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none"
                       />
                       <input
                         type="number"
                         value={service.duration}
                         onChange={(e) => updateService(service.id, 'duration', parseInt(e.target.value) || 0)}
-                        placeholder="Duration (min)"
+                        placeholder={lang === 'en' ? "Duration (min)" : "时长 (分钟)"}
                         className="px-3 py-2 text-sm font-body text-navy bg-white rounded-lg border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none"
                       />
                     </div>
@@ -208,7 +208,7 @@ export default function SettingsPage() {
                           onChange={(val) => updateService(service.id, 'active', val)}
                         />
                         <span className="text-xs text-navy-light font-body">
-                          {service.active ? 'Active' : 'Inactive'}
+                          {service.active ? (<><span className="only-en">Active</span><span className="only-zh">启用</span></>) : (<><span className="only-en">Inactive</span><span className="only-zh">停用</span></>)}
                         </span>
                       </div>
                       <Button variant="gold" size="sm" onClick={() => setEditingId(null)}>
@@ -254,14 +254,14 @@ export default function SettingsPage() {
 
       {/* Section 3: Notification Settings */}
       <Card className="p-6">
-        <h2 className="font-display text-lg text-navy tracking-tight mb-4">Notification Settings</h2>
+        <h2 className="font-display text-lg text-navy tracking-tight mb-4"><span className="only-en">Notification Settings</span><span className="only-zh">通知设置</span></h2>
 
         <div className="space-y-4">
           {/* SMS toggle */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-offwhite/60">
             <div>
               <p className="text-sm font-body font-medium text-navy"><span className="only-en">SMS Notifications</span><span className="only-zh">短信通知</span></p>
-              <p className="text-xs text-navy-light font-body">Send booking confirmations and reminders via SMS</p>
+              <p className="text-xs text-navy-light font-body"><span className="only-en">Send booking confirmations and reminders via SMS</span><span className="only-zh">通过短信发送预约确认和提醒</span></p>
             </div>
             <Toggle checked={smsEnabled} onChange={setSmsEnabled} />
           </div>
@@ -282,23 +282,23 @@ export default function SettingsPage() {
           {/* Reminder toggles */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-offwhite/60">
             <div>
-              <p className="text-sm font-body font-medium text-navy">24-Hour Reminder</p>
-              <p className="text-xs text-navy-light font-body">Send reminder 24 hours before appointment</p>
+              <p className="text-sm font-body font-medium text-navy"><span className="only-en">24-Hour Reminder</span><span className="only-zh">24小时前提醒</span></p>
+              <p className="text-xs text-navy-light font-body"><span className="only-en">Send reminder 24 hours before appointment</span><span className="only-zh">预约前24小时发送提醒</span></p>
             </div>
             <Toggle checked={reminder24h} onChange={setReminder24h} />
           </div>
 
           <div className="flex items-center justify-between p-3 rounded-xl bg-offwhite/60">
             <div>
-              <p className="text-sm font-body font-medium text-navy">1-Hour Reminder</p>
-              <p className="text-xs text-navy-light font-body">Send reminder 1 hour before appointment</p>
+              <p className="text-sm font-body font-medium text-navy"><span className="only-en">1-Hour Reminder</span><span className="only-zh">1小时前提醒</span></p>
+              <p className="text-xs text-navy-light font-body"><span className="only-en">Send reminder 1 hour before appointment</span><span className="only-zh">预约前1小时发送提醒</span></p>
             </div>
             <Toggle checked={reminder1h} onChange={setReminder1h} />
           </div>
         </div>
 
         <div className="mt-4">
-          <Button variant="gold" size="sm" onClick={() => window.alert(lang === 'en' ? "Notification settings saved!" : "通知设置已保存！")}>Save Notification Settings</Button>
+          <Button variant="gold" size="sm" onClick={() => window.alert(lang === 'en' ? "Notification settings saved!" : "通知设置已保存！")}><span className="only-en">Save Notification Settings</span><span className="only-zh">保存通知设置</span></Button>
         </div>
       </Card>
     </div>
