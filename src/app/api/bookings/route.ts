@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { bookingSchema } from '@/lib/validators';
 import { computeAvailableSlots } from '@/lib/slots';
-import { minutesToTime, timeToMinutes } from '@/lib/slots';
+import { minutesToTime, timeToMinutes, formatTimeDisplay } from '@/lib/slots';
 
 // GET /api/bookings — Admin: list bookings with optional filters
 export async function GET(request: NextRequest) {
@@ -160,14 +160,20 @@ export async function POST(request: NextRequest) {
     bufferMinutes,
   });
 
-  console.log('[BOOKING] Computed slots:', slots);
+  // Format computed slot times to match frontend format ("9:00 AM" not "09:00")
+  const formattedSlots = slots.map((s) => ({
+    ...s,
+    time: formatTimeDisplay(s.time),
+  }));
+
+  console.log('[BOOKING] Computed slots:', formattedSlots);
   console.log('[BOOKING] Looking for:', input.start_time);
 
-  // Verify the requested slot is still available
-  const requestedSlot = slots.find((s) => s.time === input.start_time);
+  // Verify the requested slot is still available (compare formatted times)
+  const requestedSlot = formattedSlots.find((s) => s.time === input.start_time);
   if (!requestedSlot || !requestedSlot.available) {
     return Response.json(
-      { error: 'This time slot is no longer available', debug: { requestedTime: input.start_time, availableSlots: slots, availability: availability } },
+      { error: 'This time slot is no longer available', debug: { requestedTime: input.start_time, availableSlots: formattedSlots, availability: availability } },
       { status: 409 }
     );
   }
