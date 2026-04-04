@@ -20,7 +20,7 @@ export const bookingSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format'),
   start_time: z
     .string()
-    .regex(/^\d{2}:\d{2}$/, 'Time must be HH:MM format'),
+    .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Time must be HH:MM or HH:MM:SS format'),
   notes: z.string().max(500).optional(),
 });
 
