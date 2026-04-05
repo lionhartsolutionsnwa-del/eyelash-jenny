@@ -1,6 +1,5 @@
-import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { getAdminClient } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAdminClient, validateAdminSession } from '@/lib/supabase/admin';
 
 // GET /api/blocked-dates — Public: list all blocked dates
 export async function GET() {
@@ -10,27 +9,24 @@ export async function GET() {
     .order('date', { ascending: true });
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json(data);
+  return NextResponse.json(data);
 }
 
 // POST /api/blocked-dates — Admin: add a blocked date
 export async function POST(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await validateAdminSession(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const body = await request.json();
   const { date, reason } = body;
 
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return Response.json(
+    return NextResponse.json(
       { error: 'A valid date in YYYY-MM-DD format is required' },
       { status: 400 }
     );
@@ -43,34 +39,30 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    // Unique constraint violation (date already blocked)
     if (error.code === '23505') {
-      return Response.json(
+      return NextResponse.json(
         { error: 'This date is already blocked' },
         { status: 409 }
       );
     }
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json(data, { status: 201 });
+  return NextResponse.json(data, { status: 201 });
 }
 
 // DELETE /api/blocked-dates?date=YYYY-MM-DD — Admin: remove a blocked date
 export async function DELETE(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await validateAdminSession(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = request.nextUrl;
   const date = searchParams.get('date');
 
   if (!date) {
-    return Response.json(
+    return NextResponse.json(
       { error: 'date query parameter is required' },
       { status: 400 }
     );
@@ -82,8 +74,8 @@ export async function DELETE(request: NextRequest) {
     .eq('date', date);
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json({ success: true });
+  return NextResponse.json({ success: true });
 }

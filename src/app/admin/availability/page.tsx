@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { useLang } from '@/contexts/LanguageContext';
@@ -8,7 +8,9 @@ import { useLang } from '@/contexts/LanguageContext';
 /* ── Types ─────────────────────────────────────────────── */
 
 interface DaySchedule {
+  id?: string;
   day: string;
+  day_of_week: number;
   enabled: boolean;
   start: string;
   end: string;
@@ -27,31 +29,13 @@ interface BlockedDate {
   reason: string;
 }
 
-/* ── Mock Data ─────────────────────────────────────────── */
-
-const initialSchedule: DaySchedule[] = [
-  { day: 'Sunday', enabled: false, start: '09:00', end: '17:00' },
-  { day: 'Monday', enabled: true, start: '09:00', end: '19:00' },
-  { day: 'Tuesday', enabled: true, start: '09:00', end: '19:00' },
-  { day: 'Wednesday', enabled: true, start: '09:00', end: '19:00' },
-  { day: 'Thursday', enabled: true, start: '09:00', end: '19:00' },
-  { day: 'Friday', enabled: true, start: '09:00', end: '19:00' },
-  { day: 'Saturday', enabled: true, start: '10:00', end: '17:00' },
-];
-
-const initialBreaks: BreakTime[] = [
-  { id: '1', day: 'Monday', start: '12:00', end: '13:00' },
-  { id: '2', day: 'Tuesday', start: '12:00', end: '13:00' },
-  { id: '3', day: 'Wednesday', start: '12:00', end: '13:00' },
-  { id: '4', day: 'Thursday', start: '12:00', end: '13:00' },
-  { id: '5', day: 'Friday', start: '12:00', end: '13:00' },
-];
-
-const initialBlocked: BlockedDate[] = [
-  { id: '1', date: '2026-04-10', reason: 'Personal day' },
-  { id: '2', date: '2026-04-25', reason: 'Training workshop' },
-  { id: '3', date: '2026-05-01', reason: 'Holiday' },
-];
+interface AvailabilityRow {
+  id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  is_active: boolean;
+}
 
 /* ── Helpers ────────────────────────────────────────────── */
 
@@ -62,18 +46,79 @@ for (let h = 7; h <= 21; h++) {
   }
 }
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + 'T00:00:00');
   return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function toHHMM(time24: string): string {
+  // "09:00:00" → "09:00"
+  return time24.substring(0, 5);
+}
+
+function toHHMMSS(time: string): string {
+  // "09:00" → "09:00:00"
+  return time.includes(':') && time.split(':').length === 2 ? `${time}:00` : time;
 }
 
 /* ── Component ─────────────────────────────────────────── */
 
 export default function AvailabilityPage() {
   const { lang } = useLang();
-  const [schedule, setSchedule] = useState<DaySchedule[]>(initialSchedule);
-  const [breaks, setBreaks] = useState<BreakTime[]>(initialBreaks);
-  const [blocked, setBlocked] = useState<BlockedDate[]>(initialBlocked);
+  const [schedule, setSchedule] = useState<DaySchedule[]>([]);
+  const [breaks, setBreaks] = useState<BreakTime[]>([]);
+  const [blocked, setBlocked] = useState<BlockedDate[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [availRes, blockedRes] = await Promise.all([
+          fetch('/api/availability'),
+          fetch('/api/blocked-dates'),
+        ]);
+        if (availRes.status === 401 || blockedRes.status === 401) {
+          window.location.href = '/admin/login';
+          return;
+        }
+        if (!availRes.ok) throw new Error('Failed to load availability');
+        const [availRows, blockedRows] = await Promise.all([
+          availRes.json() as Promise<AvailabilityRow[]>,
+          blockedRes.json() as Promise<BlockedDate[]>,
+        ]);
+
+        // Build schedule map keyed by day_of_week
+        const availMap = new Map<number, AvailabilityRow>();
+        for (const row of availRows) {
+          availMap.set(row.day_of_week, row);
+        }
+
+        // Fill all 7 days, using DB data or defaults
+        const defaultSchedule: DaySchedule[] = DAY_NAMES.map((day, i) => {
+          const row = availMap.get(i);
+          return {
+            id: row?.id,
+            day,
+            day_of_week: i,
+            enabled: row?.is_active ?? false,
+            start: row ? toHHMM(row.start_time) : '09:00',
+            end: row ? toHHMM(row.end_time) : '17:00',
+          };
+        });
+
+        setSchedule(defaultSchedule);
+        setBlocked(blockedRows);
+      } catch (err) {
+        console.error('Failed to load availability:', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   // New blocked date form
   const [newBlockDate, setNewBlockDate] = useState('');
@@ -85,7 +130,61 @@ export default function AvailabilityPage() {
   const [newBreakEnd, setNewBreakEnd] = useState('13:00');
 
   function updateSchedule(index: number, field: keyof DaySchedule, value: string | boolean) {
-    setSchedule((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+    setSchedule((prev) =>
+      prev.map((s, i) =>
+        i === index ? { ...s, [field]: value } : s
+      )
+    );
+  }
+
+  async function saveSchedule() {
+    setSaving(true);
+    setSaveError(null);
+    try {
+      for (const day of schedule) {
+        if (!day.id) continue; // Can't update a row without an id
+        await fetch('/api/availability', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: day.id,
+            is_active: day.enabled,
+            start_time: toHHMMSS(day.start),
+            end_time: toHHMMSS(day.end),
+          }),
+        });
+      }
+      // Reload to get fresh data and ids
+      window.location.reload();
+    } catch {
+      setSaveError('Failed to save schedule');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function addBlockedDate() {
+    if (!newBlockDate) return;
+    const res = await fetch('/api/blocked-dates', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: newBlockDate, reason: newBlockReason }),
+    });
+    if (res.ok) {
+      const newEntry = await res.json();
+      setBlocked((prev) => [...prev, newEntry]);
+      setNewBlockDate('');
+      setNewBlockReason('');
+    }
+  }
+
+  async function removeBlockedDate(id: string) {
+    const entry = blocked.find((b) => b.id === id);
+    if (!entry) return;
+    const res = await fetch(`/api/blocked-dates?date=${entry.date}`, { method: 'DELETE' });
+    if (res.ok) {
+      setBlocked((prev) => prev.filter((b) => b.id !== id));
+    }
   }
 
   function addBreak() {
@@ -98,20 +197,6 @@ export default function AvailabilityPage() {
 
   function removeBreak(id: string) {
     setBreaks((prev) => prev.filter((b) => b.id !== id));
-  }
-
-  function addBlockedDate() {
-    if (!newBlockDate) return;
-    setBlocked((prev) => [
-      ...prev,
-      { id: Date.now().toString(), date: newBlockDate, reason: newBlockReason },
-    ]);
-    setNewBlockDate('');
-    setNewBlockReason('');
-  }
-
-  function removeBlockedDate(id: string) {
-    setBlocked((prev) => prev.filter((b) => b.id !== id));
   }
 
   // Mini calendar for blocked dates
@@ -148,7 +233,12 @@ export default function AvailabilityPage() {
           <span className="only-zh">每周营业时间</span>
         </h2>
         <div className="space-y-3">
-          {schedule.map((day, i) => (
+          {loading ? (
+            <div className="text-center py-8 text-sm text-gray font-body">
+              <div className="w-6 h-6 border-2 border-gold border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              Loading schedule...
+            </div>
+          ) : schedule.map((day, i) => (
             <div
               key={day.day}
               className="flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-xl bg-offwhite/60"
@@ -215,10 +305,14 @@ export default function AvailabilityPage() {
           ))}
         </div>
         <div className="mt-4">
-          <Button variant="gold" size="sm" onClick={() => window.alert(lang === 'en' ? 'Schedule saved!' : '时间表已保存！')}>
-            <span className="only-en">Save Schedule</span>
-            <span className="only-zh">保存时间表</span>
+          <Button variant="gold" size="sm" onClick={saveSchedule} disabled={saving}>
+            {saving ? (
+              <span className="only-en">Saving...</span>
+            ) : (
+              <><span className="only-en">Save Schedule</span><span className="only-zh">保存时间表</span></>
+            )}
           </Button>
+          {saveError && <span className="text-xs text-rose-500 ml-2">{saveError}</span>}
         </div>
       </Card>
 

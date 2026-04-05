@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -17,18 +17,6 @@ interface Service {
   active: boolean;
 }
 
-/* ── Mock Data ─────────────────────────────────────────── */
-
-const initialServices: Service[] = [
-  { id: '1', name: 'Classic Full Set', price: 150, duration: 120, description: 'Individual classic lash extensions applied to each natural lash', active: true },
-  { id: '2', name: 'Hybrid Full Set', price: 200, duration: 150, description: 'Mix of classic and volume fans for a textured, fuller look', active: true },
-  { id: '3', name: 'Volume Full Set', price: 250, duration: 180, description: 'Handmade volume fans for a dramatic, full appearance', active: true },
-  { id: '4', name: 'Classic Refill', price: 80, duration: 90, description: 'Maintenance fill for classic lash sets (within 3 weeks)', active: true },
-  { id: '5', name: 'Hybrid Refill', price: 120, duration: 90, description: 'Maintenance fill for hybrid lash sets (within 3 weeks)', active: true },
-  { id: '6', name: 'Volume Refill', price: 140, duration: 90, description: 'Maintenance fill for volume lash sets (within 3 weeks)', active: true },
-  { id: '7', name: 'Lash Removal', price: 50, duration: 60, description: 'Safe professional removal of lash extensions', active: true },
-];
-
 /* ── Component ─────────────────────────────────────────── */
 
 export default function SettingsPage() {
@@ -40,7 +28,9 @@ export default function SettingsPage() {
   const [timezone, setTimezone] = useState('America/Los_Angeles');
 
   // Services
-  const [services, setServices] = useState<Service[]>(initialServices);
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Notifications
@@ -49,23 +39,140 @@ export default function SettingsPage() {
   const [reminder24h, setReminder24h] = useState(true);
   const [reminder1h, setReminder1h] = useState(true);
 
-  function updateService(id: string, field: keyof Service, value: string | number | boolean) {
+  // Fetch services on mount
+  useEffect(() => {
+    async function fetchServices() {
+      try {
+        const res = await fetch('/api/services');
+        if (!res.ok) throw new Error('Failed to fetch services');
+        const data = await res.json();
+        // Map duration_minutes from API to duration in local state
+        setServices(
+          data.map((s: { id: string; name: string; price: number; duration_minutes: number; description: string; active: boolean }) => ({
+            id: s.id,
+            name: s.name,
+            price: s.price,
+            duration: s.duration_minutes,
+            description: s.description,
+            active: s.active,
+          }))
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unknown error');
+        console.error('Error fetching services:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchServices();
+  }, []);
+
+  async function updateService(id: string, field: keyof Service, value: string | number | boolean) {
+    // Optimistically update local state
     setServices((prev) =>
       prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
     );
+
+    const service = services.find((s) => s.id === id);
+    if (!service) return;
+
+    // Map duration back to duration_minutes for API
+    const apiBody: Record<string, string | number | boolean> = {
+      id,
+      name: service.name,
+      price: service.price,
+      duration_minutes: service.duration,
+      description: service.description,
+      active: service.active,
+    };
+    // Override the field that was changed (use the local state value for duration since we already updated it)
+    if (field === 'duration') {
+      apiBody.duration_minutes = value as number;
+    } else {
+      apiBody[field] = value;
+    }
+
+    try {
+      const res = await fetch('/api/services', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(apiBody),
+      });
+      if (!res.ok) throw new Error('Failed to update service');
+      const updated = await res.json();
+      // Update local state with API response, mapping duration_minutes back to duration
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === id
+            ? {
+                ...s,
+                name: updated.name,
+                price: updated.price,
+                duration: updated.duration_minutes,
+                description: updated.description,
+                active: updated.active,
+              }
+            : s
+        )
+      );
+    } catch (err) {
+      console.error('Error updating service:', err);
+      alert(lang === 'en' ? 'Failed to save service. Please try again.' : '保存服务失败，请重试。');
+    }
   }
 
-  function addService() {
+  async function addService() {
+    const tempId = `temp-${Date.now()}`;
     const newService: Service = {
-      id: Date.now().toString(),
+      id: tempId,
       name: 'New Service',
       price: 0,
       duration: 60,
       description: '',
       active: true,
     };
+
+    // Optimistically add to local state
     setServices((prev) => [...prev, newService]);
-    setEditingId(newService.id);
+    setEditingId(tempId);
+
+    try {
+      const res = await fetch('/api/services', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newService.name,
+          price: newService.price,
+          duration_minutes: newService.duration,
+          description: newService.description,
+          active: newService.active,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to create service');
+      const created = await res.json();
+      // Replace temp service with real one from API
+      setServices((prev) =>
+        prev.map((s) =>
+          s.id === tempId
+            ? {
+                id: created.id,
+                name: created.name,
+                price: created.price,
+                duration: created.duration_minutes,
+                description: created.description,
+                active: created.active,
+              }
+            : s
+        )
+      );
+      setEditingId(created.id);
+    } catch (err) {
+      console.error('Error creating service:', err);
+      alert(lang === 'en' ? 'Failed to create service. Please try again.' : '创建服务失败，请重试。');
+      // Remove the temp service on error
+      setServices((prev) => prev.filter((s) => s.id !== tempId));
+      setEditingId(null);
+    }
   }
 
   function Toggle({

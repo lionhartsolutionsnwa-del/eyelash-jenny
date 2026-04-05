@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { useLang } from '@/contexts/LanguageContext';
 
@@ -19,30 +19,32 @@ interface Client {
 type SortKey = keyof Pick<Client, 'name' | 'visits' | 'lastVisit' | 'totalSpent'>;
 type SortDir = 'asc' | 'desc';
 
-/* ── Mock Data ─────────────────────────────────────────── */
-
-const mockClients: Client[] = [
-  { id: '1', name: 'Sarah Kim', phone: '(555) 123-4567', email: 'sarah@email.com', visits: 12, lastVisit: '2026-03-28', totalSpent: 1800 },
-  { id: '2', name: 'Emily Chen', phone: '(555) 234-5678', email: 'emily@email.com', visits: 8, lastVisit: '2026-03-25', totalSpent: 1400 },
-  { id: '3', name: 'Jessica Park', phone: '(555) 345-6789', email: 'jessica@email.com', visits: 15, lastVisit: '2026-03-30', totalSpent: 2250 },
-  { id: '4', name: 'Michelle Lee', phone: '(555) 456-7890', email: 'michelle@email.com', visits: 6, lastVisit: '2026-03-22', totalSpent: 720 },
-  { id: '5', name: 'Amanda Wong', phone: '(555) 567-8901', email: 'amanda@email.com', visits: 3, lastVisit: '2026-03-20', totalSpent: 450 },
-  { id: '6', name: 'Rachel Nguyen', phone: '(555) 678-9012', email: 'rachel@email.com', visits: 10, lastVisit: '2026-03-27', totalSpent: 1600 },
-  { id: '7', name: 'Lisa Wang', phone: '(555) 789-0123', email: 'lisa@email.com', visits: 1, lastVisit: '2026-03-29', totalSpent: 150 },
-  { id: '8', name: 'Diana Cho', phone: '(555) 890-1234', email: 'diana@email.com', visits: 4, lastVisit: '2026-03-18', totalSpent: 650 },
-  { id: '9', name: 'Karen Yoo', phone: '(555) 901-2345', email: 'karen@email.com', visits: 7, lastVisit: '2026-03-15', totalSpent: 1050 },
-  { id: '10', name: 'Grace Tan', phone: '(555) 012-3456', email: 'grace@email.com', visits: 2, lastVisit: '2026-03-10', totalSpent: 350 },
-  { id: '11', name: 'Sophia Lin', phone: '(555) 111-2222', email: 'sophia@email.com', visits: 9, lastVisit: '2026-03-26', totalSpent: 1350 },
-  { id: '12', name: 'Olivia Fang', phone: '(555) 333-4444', email: 'olivia@email.com', visits: 5, lastVisit: '2026-03-24', totalSpent: 850 },
-];
-
 /* ── Component ─────────────────────────────────────────── */
 
 export default function ClientsPage() {
   const { lang } = useLang();
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('name');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
+
+  useEffect(() => {
+    setLoading(true);
+    setLoadError(null);
+    fetch('/api/clients')
+      .then((r) => {
+        if (r.status === 401) { window.location.href = '/admin/login'; return null; }
+        if (!r.ok) throw new Error(`Server error: ${r.status}`);
+        return r.json();
+      })
+      .then((data: Client[] | null) => {
+        if (data) setClients(data);
+      })
+      .catch((err) => setLoadError(err instanceof Error ? err.message : 'Failed to load'))
+      .finally(() => setLoading(false));
+  }, []);
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -54,7 +56,7 @@ export default function ClientsPage() {
   }
 
   const sorted = useMemo(() => {
-    const filtered = mockClients.filter((c) => {
+    const filtered = clients.filter((c) => {
       if (!search) return true;
       const q = search.toLowerCase();
       return (
@@ -72,7 +74,23 @@ export default function ClientsPage() {
       else if (sortKey === 'totalSpent') cmp = a.totalSpent - b.totalSpent;
       return sortDir === 'asc' ? cmp : -cmp;
     });
-  }, [search, sortKey, sortDir]);
+  }, [search, sortKey, sortDir, clients]);
+
+  const clientRows = sorted.map((client) => (
+    <tr
+      key={client.id}
+      className="border-b border-gray-light/60 hover:bg-offwhite/40 transition-opacity duration-150 cursor-pointer"
+    >
+      <td className="px-4 py-3">
+        <p className="font-medium text-navy">{client.name}</p>
+      </td>
+      <td className="px-4 py-3 text-navy-light whitespace-nowrap">{client.phone}</td>
+      <td className="px-4 py-3 text-navy-light">{client.email}</td>
+      <td className="px-4 py-3 text-navy">{client.visits}</td>
+      <td className="px-4 py-3 text-navy-light whitespace-nowrap">{client.lastVisit}</td>
+      <td className="px-4 py-3 text-right text-navy font-medium">${client.totalSpent.toLocaleString()}</td>
+    </tr>
+  ));
 
   function SortIcon({ column }: { column: SortKey }) {
     if (sortKey !== column) {
@@ -162,27 +180,38 @@ export default function ClientsPage() {
               </tr>
             </thead>
             <tbody>
-              {sorted.map((client) => (
-                <tr
-                  key={client.id}
-                  className="border-b border-gray-light/60 hover:bg-offwhite/40 transition-opacity duration-150 cursor-pointer"
-                >
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-navy">{client.name}</p>
-                  </td>
-                  <td className="px-4 py-3 text-navy-light whitespace-nowrap">{client.phone}</td>
-                  <td className="px-4 py-3 text-navy-light">{client.email}</td>
-                  <td className="px-4 py-3 text-navy">{client.visits}</td>
-                  <td className="px-4 py-3 text-navy-light whitespace-nowrap">{client.lastVisit}</td>
-                  <td className="px-4 py-3 text-right text-navy font-medium">${client.totalSpent.toLocaleString()}</td>
-                </tr>
-              ))}
-              {sorted.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray">
-                    No clients found matching your search.
+                  <td colSpan={6} className="text-center py-16 text-gray font-body text-sm">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-8 h-8 border-3 border-gold border-t-transparent rounded-full animate-spin" />
+                      <p>Loading clients...</p>
+                    </div>
                   </td>
                 </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-16 text-gray font-body text-sm">
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-rose-500">Failed to load: {loadError}</p>
+                      <button
+                        onClick={() => window.location.reload()}
+                        className="px-4 py-1.5 text-sm bg-gold text-navy rounded-lg hover:bg-gold-dark transition-colors cursor-pointer"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : sorted.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="text-center py-12 text-gray font-body">
+                    <span className="only-en">No clients found.</span>
+                    <span className="only-zh">暂无客户记录。</span>
+                  </td>
+                </tr>
+              ) : (
+                clientRows
               )}
             </tbody>
           </table>

@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { getAdminClient } from '@/lib/supabase/admin';
+import { getAdminClient, validateAdminSession } from '@/lib/supabase/admin';
 
 // GET /api/availability — Public: list all availability rows
 export async function GET() {
@@ -18,11 +17,8 @@ export async function GET() {
 
 // PUT /api/availability — Admin: update an availability row
 export async function PUT(request: NextRequest) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
+  const userId = await validateAdminSession(request);
+  if (!userId) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

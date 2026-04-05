@@ -35,8 +35,7 @@ export default function AdminLoginPage() {
       }
 
       // Redirect to admin dashboard
-      router.push('/admin');
-      router.refresh();
+      window.location.href = '/admin';
     } catch {
       setError('Connection error. Please try again.');
       setLoading(false);

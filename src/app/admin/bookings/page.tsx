@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useLang } from '@/contexts/LanguageContext';
@@ -21,22 +21,54 @@ interface Booking {
   price: number;
 }
 
-/* ── Mock Data ─────────────────────────────────────────── */
+interface ServiceInfo {
+  name: string;
+  price: number;
+  duration_minutes?: number;
+}
 
-const [bookings, setBookings] = useState<Booking[]>([
-  { id: 'B001', date: '2026-03-30', time: '9:00 AM', client: 'Sarah Kim', email: 'sarah@email.com', phone: '(555) 123-4567', service: 'Classic Full Set', status: 'confirmed', price: 150 },
-  { id: 'B002', date: '2026-03-30', time: '10:30 AM', client: 'Emily Chen', email: 'emily@email.com', phone: '(555) 234-5678', service: 'Hybrid Full Set', status: 'confirmed', price: 200 },
-  { id: 'B003', date: '2026-03-30', time: '12:00 PM', client: 'Jessica Park', email: 'jessica@email.com', phone: '(555) 345-6789', service: 'Volume Full Set', status: 'pending', price: 250 },
-  { id: 'B004', date: '2026-03-30', time: '1:30 PM', client: 'Michelle Lee', email: 'michelle@email.com', phone: '(555) 456-7890', service: 'Classic Refill', status: 'confirmed', price: 80 },
-  { id: 'B005', date: '2026-03-30', time: '3:00 PM', client: 'Amanda Wong', email: 'amanda@email.com', phone: '(555) 567-8901', service: 'Lash Removal', status: 'pending', price: 50 },
-  { id: 'B006', date: '2026-03-30', time: '4:30 PM', client: 'Rachel Nguyen', email: 'rachel@email.com', phone: '(555) 678-9012', service: 'Hybrid Refill', status: 'confirmed', price: 120 },
-  { id: 'B007', date: '2026-03-29', time: '9:00 AM', client: 'Lisa Wang', email: 'lisa@email.com', phone: '(555) 789-0123', service: 'Classic Full Set', status: 'completed', price: 150 },
-  { id: 'B008', date: '2026-03-29', time: '11:00 AM', client: 'Diana Cho', email: 'diana@email.com', phone: '(555) 890-1234', service: 'Volume Full Set', status: 'completed', price: 250 },
-  { id: 'B009', date: '2026-03-28', time: '10:00 AM', client: 'Karen Yoo', email: 'karen@email.com', phone: '(555) 901-2345', service: 'Hybrid Full Set', status: 'cancelled', price: 200 },
-  { id: 'B010', date: '2026-03-28', time: '1:00 PM', client: 'Grace Tan', email: 'grace@email.com', phone: '(555) 012-3456', service: 'Classic Refill', status: 'completed', price: 80 },
-  { id: 'B011', date: '2026-03-27', time: '9:30 AM', client: 'Sophia Lin', email: 'sophia@email.com', phone: '(555) 111-2222', service: 'Volume Full Set', status: 'completed', price: 250 },
-  { id: 'B012', date: '2026-03-27', time: '12:00 PM', client: 'Olivia Fang', email: 'olivia@email.com', phone: '(555) 333-4444', service: 'Hybrid Refill', status: 'completed', price: 120 },
-]);
+interface SupabaseBooking {
+  id: string;
+  client_name: string;
+  client_phone: string;
+  client_email: string | null;
+  date: string;
+  start_time: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  services: ServiceInfo[] | null;
+}
+
+/* ── Helpers ────────────────────────────────────────────── */
+
+function formatTimeDisplay(time: string): string {
+  // "09:00:00" → "9:00 AM"
+  const parts = time.split(':');
+  let hour = parseInt(parts[0], 10);
+  const minute = parts[1];
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  if (hour === 0) hour = 12;
+  else if (hour > 12) hour -= 12;
+  return `${hour}:${minute} ${ampm}`;
+}
+
+function transformBooking(b: SupabaseBooking): Booking {
+  const services = b.services ?? [];
+  const serviceName = services.length > 0
+    ? services.map((s) => s.name).join(', ')
+    : 'Unknown';
+  const totalPrice = services.reduce((sum, s) => sum + (s.price ?? 0), 0);
+  return {
+    id: b.id,
+    date: b.date,
+    time: formatTimeDisplay(b.start_time),
+    client: b.client_name,
+    email: b.client_email ?? '',
+    phone: b.client_phone,
+    service: serviceName,
+    status: b.status === 'cancelled' || b.status === 'no_show' ? 'cancelled' : b.status === 'pending' ? 'pending' : b.status === 'completed' ? 'completed' : 'confirmed',
+    price: totalPrice,
+  };
+}
 
 const servicesEn = ['All Services', 'Classic Full Set', 'Hybrid Full Set', 'Volume Full Set', 'Classic Refill', 'Hybrid Refill', 'Lash Removal'];
 const servicesZh = ['所有服务', '经典全套', '混搭全套', '浓密全套', '经典补睫毛', '混搭补睫毛', '睫毛卸除'];
@@ -48,11 +80,63 @@ const ITEMS_PER_PAGE = 8;
 
 export default function BookingsPage() {
   const { lang } = useLang();
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [serviceFilter, setServiceFilter] = useState('All Services');
   const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+
+  async function loadBookings() {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch('/api/bookings');
+      if (!res.ok) {
+        if (res.status === 401) {
+          // Not authenticated — redirect to login
+          window.location.href = '/admin/login';
+          return;
+        }
+        throw new Error(`Server error: ${res.status}`);
+      }
+      const data: SupabaseBooking[] = await res.json();
+      setBookings(data.map(transformBooking));
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function updateStatus(id: string, newStatus: Booking['status']) {
+    setUpdatingId(id);
+    setStatusError(null);
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error(`Failed to update status: ${res.status}`);
+      setBookings(bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
+      if (selectedBooking?.id === id) {
+        setSelectedBooking({ ...selectedBooking, status: newStatus });
+      }
+    } catch (err) {
+      setStatusError(err instanceof Error ? err.message : 'Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  useEffect(() => {
+    loadBookings();
+  }, []);
 
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
@@ -175,7 +259,37 @@ export default function BookingsPage() {
               </tr>
             </thead>
             <tbody>
-              {paginated.map((booking) => (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-16 text-gray font-body text-sm">
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="w-8 h-8 border-3 border-gold border-t-transparent rounded-full animate-spin" />
+                      <p>Loading bookings...</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-16 text-gray font-body text-sm">
+                    <div className="flex flex-col items-center gap-3">
+                      <p className="text-rose-500">Failed to load: {loadError}</p>
+                      <button
+                        onClick={loadBookings}
+                        className="px-4 py-1.5 text-sm bg-gold text-navy rounded-lg hover:bg-gold-dark transition-colors cursor-pointer"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-16 text-gray font-body text-sm">
+                    No bookings found
+                  </td>
+                </tr>
+              ) : (
+              paginated.map((booking) => (
                 <tr
                   key={booking.id}
                   className="border-b border-gray-light/60 hover:bg-offwhite/40 transition-opacity duration-150 cursor-pointer"
@@ -202,27 +316,23 @@ export default function BookingsPage() {
                         <span className="only-en">View</span><span className="only-zh">查看</span>
                       </button>
                       {booking.status === 'pending' && (
-                        <button onClick={() => { setBookings(bookings.map(b => b.id === booking.id ? { ...b, status: "confirmed" } : b)); }} className="px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-50 rounded-md transition-opacity duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-gold">
-                          <span className="only-en">Confirm</span><span className="only-zh">确认</span>
+                        <button onClick={() => updateStatus(booking.id, 'confirmed')} disabled={updatingId === booking.id} className="px-2 py-1 text-xs text-emerald-700 hover:bg-emerald-50 rounded-md transition-opacity duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-gold disabled:opacity-50 disabled:cursor-not-allowed">
+                          {updatingId === booking.id
+                            ? <><span className="only-en">...</span><span className="only-zh">...</span></>
+                            : <><span className="only-en">Confirm</span><span className="only-zh">确认</span></>}
                         </button>
                       )}
                       {(booking.status === 'pending' || booking.status === 'confirmed') && (
-                        <button onClick={() => { setBookings(bookings.map(b => b.id === booking.id ? { ...b, status: "cancelled" } : b)); }} className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-md transition-opacity duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-gold">
-                          <span className="only-en">Cancel</span><span className="only-zh">取消</span>
+                        <button onClick={() => updateStatus(booking.id, 'cancelled')} disabled={updatingId === booking.id} className="px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 rounded-md transition-opacity duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-gold disabled:opacity-50 disabled:cursor-not-allowed">
+                          {updatingId === booking.id
+                            ? <><span className="only-en">...</span><span className="only-zh">...</span></>
+                            : <><span className="only-en">Cancel</span><span className="only-zh">取消</span></>}
                         </button>
                       )}
                     </div>
                   </td>
                 </tr>
-              ))}
-              {paginated.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-gray">
-                    <span className="only-en">No bookings found matching your filters.</span>
-                    <span className="only-zh">没有找到符合条件的预约</span>
-                  </td>
-                </tr>
-              )}
+              )))}
             </tbody>
           </table>
         </div>
@@ -314,12 +424,12 @@ export default function BookingsPage() {
                 <span className="only-en">Close</span><span className="only-zh">关闭</span>
               </Button>
               {selectedBooking.status === 'pending' && (
-                <Button variant="gold" size="sm" onClick={() => { setBookings(bookings.map(b => b.id === selectedBooking.id ? { ...b, status: 'confirmed' } : b)); setSelectedBooking(null); }}>
+                <Button variant="gold" size="sm" disabled={updatingId === selectedBooking.id} onClick={async () => { await updateStatus(selectedBooking.id, 'confirmed'); setSelectedBooking(null); }}>
                   <span className="only-en">Confirm Booking</span><span className="only-zh">确认预约</span>
                 </Button>
               )}
               {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
-                <Button variant="secondary" size="sm" onClick={() => { setBookings(bookings.map(b => b.id === selectedBooking.id ? { ...b, status: 'cancelled' } : b)); setSelectedBooking(null); }}>
+                <Button variant="secondary" size="sm" disabled={updatingId === selectedBooking.id} onClick={async () => { await updateStatus(selectedBooking.id, 'cancelled'); setSelectedBooking(null); }}>
                   <span className="only-en">Cancel Booking</span><span className="only-zh">取消预约</span>
                 </Button>
               )}

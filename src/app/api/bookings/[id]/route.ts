@@ -1,17 +1,13 @@
-import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { getAdminClient } from '@/lib/supabase/admin';
+import { NextRequest, NextResponse } from 'next/server';
+import { getAdminClient, validateAdminSession } from '@/lib/supabase/admin';
 
 type Context = { params: Promise<{ id: string }> };
 
 // GET /api/bookings/[id] — Admin: get a single booking with service details
 export async function GET(request: NextRequest, context: Context) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await validateAdminSession(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { id } = await context.params;
@@ -23,20 +19,17 @@ export async function GET(request: NextRequest, context: Context) {
     .single();
 
   if (error) {
-    return Response.json({ error: 'Booking not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
   }
 
-  return Response.json(data);
+  return NextResponse.json(data);
 }
 
 // PATCH /api/bookings/[id] — Admin: update a booking
 export async function PATCH(request: NextRequest, context: Context) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await validateAdminSession(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { id } = await context.params;
@@ -52,7 +45,7 @@ export async function PATCH(request: NextRequest, context: Context) {
   }
 
   if (Object.keys(updates).length === 0) {
-    return Response.json({ error: 'No valid fields to update' }, { status: 400 });
+    return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
   }
 
   updates.updated_at = new Date().toISOString();
@@ -65,20 +58,17 @@ export async function PATCH(request: NextRequest, context: Context) {
     .single();
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json(data);
+  return NextResponse.json(data);
 }
 
 // DELETE /api/bookings/[id] — Admin: cancel a booking (soft delete)
 export async function DELETE(request: NextRequest, context: Context) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
+  const userId = await validateAdminSession(request);
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const { id } = await context.params;
@@ -91,8 +81,8 @@ export async function DELETE(request: NextRequest, context: Context) {
     .single();
 
   if (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return Response.json(data);
+  return NextResponse.json(data);
 }

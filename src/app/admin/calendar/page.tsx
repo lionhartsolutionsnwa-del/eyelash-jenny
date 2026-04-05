@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -25,30 +25,55 @@ interface CalendarBooking {
   notes: string;
 }
 
-/* ── Mock Data ─────────────────────────────────────────── */
+interface SupabaseBooking {
+  id: string;
+  client_name: string;
+  client_phone: string;
+  notes: string | null;
+  date: string;
+  start_time: string; // "HH:MM:SS"
+  end_time: string;
+  status: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show';
+  services: { name: string; duration_minutes: number } | null;
+}
 
-function getMockBookings(): CalendarBooking[] {
-  const today = new Date();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - today.getDay() + 1);
+/* ── Helpers ────────────────────────────────────────────── */
 
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    return d.toISOString().split('T')[0];
-  });
+function timeToFractionalHour(time: string): number {
+  // Handles "HH:MM:SS" or "HH:MM"
+  const parts = time.split(':');
+  const h = parseInt(parts[0], 10);
+  const m = parseInt(parts[1], 10);
+  return h + m / 60;
+}
 
-  return [
-    { id: '1', client: 'Sarah Kim', service: 'Classic Full Set', serviceType: 'classic', date: dates[0], startHour: 9, duration: 2, status: 'confirmed', phone: '(555) 123-4567', notes: 'New client, wants natural look' },
-    { id: '2', client: 'Emily Chen', service: 'Hybrid Full Set', serviceType: 'hybrid', date: dates[0], startHour: 12, duration: 2.5, status: 'confirmed', phone: '(555) 234-5678', notes: '' },
-    { id: '3', client: 'Jessica Park', service: 'Volume Full Set', serviceType: 'volume', date: dates[1], startHour: 10, duration: 3, status: 'pending', phone: '(555) 345-6789', notes: 'Returning client' },
-    { id: '4', client: 'Michelle Lee', service: 'Classic Refill', serviceType: 'refill', date: dates[1], startHour: 14, duration: 1.5, status: 'confirmed', phone: '(555) 456-7890', notes: '' },
-    { id: '5', client: 'Amanda Wong', service: 'Lash Removal', serviceType: 'removal', date: dates[2], startHour: 9.5, duration: 1, status: 'confirmed', phone: '(555) 567-8901', notes: 'Sensitive eyes' },
-    { id: '6', client: 'Rachel Nguyen', service: 'Hybrid Refill', serviceType: 'hybrid', date: dates[2], startHour: 11, duration: 1.5, status: 'pending', phone: '(555) 678-9012', notes: '' },
-    { id: '7', client: 'Lisa Wang', service: 'Classic Full Set', serviceType: 'classic', date: dates[3], startHour: 10, duration: 2, status: 'confirmed', phone: '(555) 789-0123', notes: '' },
-    { id: '8', client: 'Diana Cho', service: 'Volume Full Set', serviceType: 'volume', date: dates[4], startHour: 13, duration: 3, status: 'confirmed', phone: '(555) 890-1234', notes: 'Allergic to certain glues' },
-    { id: '9', client: 'Karen Yoo', service: 'Hybrid Full Set', serviceType: 'hybrid', date: dates[5], startHour: 10, duration: 2.5, status: 'pending', phone: '(555) 901-2345', notes: '' },
-  ];
+function serviceNameToType(name: string): ServiceType {
+  const lower = name.toLowerCase();
+  if (lower.includes('classic') && lower.includes('refill')) return 'refill';
+  if (lower.includes('hybrid') && lower.includes('refill')) return 'refill';
+  if (lower.includes('volume') && lower.includes('refill')) return 'refill';
+  if (lower.includes('classic')) return 'classic';
+  if (lower.includes('hybrid')) return 'hybrid';
+  if (lower.includes('volume')) return 'volume';
+  if (lower.includes('removal')) return 'removal';
+  if (lower.includes('refill')) return 'refill';
+  return 'classic';
+}
+
+function transformBooking(b: SupabaseBooking): CalendarBooking {
+  const serviceName = b.services?.name ?? 'Classic Lashes';
+  return {
+    id: b.id,
+    client: b.client_name,
+    service: serviceName,
+    serviceType: serviceNameToType(serviceName),
+    date: b.date,
+    startHour: timeToFractionalHour(b.start_time),
+    duration: (b.services?.duration_minutes ?? 120) / 60,
+    status: b.status === 'cancelled' ? 'pending' : b.status === 'no_show' ? 'pending' : b.status as 'confirmed' | 'pending' | 'completed',
+    phone: b.client_phone,
+    notes: b.notes ?? '',
+  };
 }
 
 /* ── Helpers ────────────────────────────────────────────── */
@@ -105,9 +130,64 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null);
+  const [bookings, setBookings] = useState<CalendarBooking[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
 
-  const bookings = useMemo(() => getMockBookings(), []);
   const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
+
+  // Fetch bookings from Supabase when visible date range changes
+  const fetchBookings = useCallback(async () => {
+    setLoadingBookings(true);
+    try {
+      // Fetch bookings for the visible week/month window (2 months range for safety)
+      const startDate = weekDates[0];
+      const endDate = weekDates[6];
+      const params = new URLSearchParams({
+        start: startDate,
+        end: endDate,
+      });
+      const res = await fetch(`/api/admin/calendar/bookings?${params.toString()}`);
+      if (res.status === 401) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      if (!res.ok) throw new Error('Failed to fetch bookings');
+      const data: SupabaseBooking[] = await res.json();
+      setBookings(data.map(transformBooking));
+    } catch (err) {
+      console.error('Calendar fetch error:', err);
+    } finally {
+      setLoadingBookings(false);
+    }
+  }, [weekDates]);
+
+  useEffect(() => {
+    if (viewMode === 'day' || viewMode === 'week') {
+      fetchBookings();
+    }
+  }, [viewMode, fetchBookings]);
+
+  // Also refetch when currentDate changes (nav arrows)
+  useEffect(() => {
+    if (viewMode === 'month') {
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth();
+      const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+      const lastDay = new Date(year, month + 1, 0).getDate();
+      const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      setLoadingBookings(true);
+      fetch(`/api/admin/calendar/bookings?start=${startDate}&end=${endDate}`)
+        .then((r) => {
+          if (r.status === 401) { window.location.href = '/admin/login'; return null; }
+          return r.json();
+        })
+        .then((data: SupabaseBooking[] | null) => {
+          if (data) setBookings(data.map(transformBooking));
+        })
+        .catch((err) => console.error('Calendar fetch error:', err))
+        .finally(() => setLoadingBookings(false));
+    }
+  }, [currentDate, viewMode]);
 
   function navigate(dir: -1 | 0 | 1) {
     if (dir === 0) {
