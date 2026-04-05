@@ -4,7 +4,7 @@ import { z } from 'zod';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
 interface ServiceInfo {
@@ -119,11 +119,6 @@ export async function POST(request: NextRequest) {
   console.log('[BOOKING] Input:', JSON.stringify(input));
 
   // 2. Spam protection: check for duplicate phone/email within last 5 minutes
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
   const { data: recentByPhone } = await supabase

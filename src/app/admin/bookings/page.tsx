@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { useLang } from '@/contexts/LanguageContext';
@@ -91,28 +91,6 @@ export default function BookingsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
 
-  async function loadBookings() {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const res = await fetch('/api/bookings');
-      if (!res.ok) {
-        if (res.status === 401) {
-          // Not authenticated — redirect to login
-          window.location.href = '/admin/login';
-          return;
-        }
-        throw new Error(`Server error: ${res.status}`);
-      }
-      const data: SupabaseBooking[] = await res.json();
-      setBookings(data.map(transformBooking));
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : 'Failed to load bookings');
-    } finally {
-      setLoading(false);
-    }
-  }
-
   async function updateStatus(id: string, newStatus: Booking['status']) {
     setUpdatingId(id);
     setStatusError(null);
@@ -123,7 +101,7 @@ export default function BookingsPage() {
         body: JSON.stringify({ status: newStatus }),
       });
       if (!res.ok) throw new Error(`Failed to update status: ${res.status}`);
-      setBookings(bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
+      setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
       if (selectedBooking?.id === id) {
         setSelectedBooking({ ...selectedBooking, status: newStatus });
       }
@@ -135,21 +113,52 @@ export default function BookingsPage() {
   }
 
   useEffect(() => {
-    loadBookings();
+    let cancelled = false;
+    fetch('/api/bookings')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        return res.json();
+      })
+      .then((data: SupabaseBooking[]) => {
+        if (!cancelled) {
+          setBookings(data.map(transformBooking));
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : 'Failed to load bookings');
+          setLoading(false);
+        }
+      });
+    return () => { cancelled = true; };
   }, []);
 
-  const filtered = useMemo(() => {
-    return bookings.filter((b) => {
-      const matchesSearch =
-        !search ||
-        b.client.toLowerCase().includes(search.toLowerCase()) ||
-        b.id.toLowerCase().includes(search.toLowerCase()) ||
-        b.email.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'All Statuses' || b.status === statusFilter;
-      const matchesService = serviceFilter === 'All Services' || b.service === serviceFilter;
-      return matchesSearch && matchesStatus && matchesService;
-    });
-  }, [search, statusFilter, serviceFilter]);
+  async function loadBookings() {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch('/api/bookings');
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data: SupabaseBooking[] = await res.json();
+      setBookings(data.map(transformBooking));
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : 'Failed to load bookings');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filtered = bookings.filter((b) => {
+    const matchesSearch =
+      !search ||
+      b.client.toLowerCase().includes(search.toLowerCase()) ||
+      b.id.toLowerCase().includes(search.toLowerCase()) ||
+      b.email.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'All Statuses' || b.status === statusFilter;
+    const matchesService = serviceFilter === 'All Services' || b.service === serviceFilter;
+    return matchesSearch && matchesStatus && matchesService;
+  });
 
   const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
