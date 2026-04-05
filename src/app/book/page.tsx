@@ -69,9 +69,14 @@ export default function BookPage() {
   const { lang } = useLang();
 
   const [weekStart, setWeekStart] = useState<Date>(() => {
+    // Align to Monday of current week so calendar always opens on the current week
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return today;
+    const day = today.getDay(); // 0=Sun
+    const diffToMon = day === 0 ? -6 : 1 - day;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diffToMon);
+    return monday;
   });
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -205,7 +210,7 @@ export default function BookPage() {
         client_email: form.email.trim() || undefined,
         date: formatDateISO(selectedDate),
         start_time: selectedTime + ':00',
-        service_ids: form.serviceIds,
+        service_id: form.serviceIds[0], // API expects single service_id UUID
         notes: form.notes.trim() || undefined,
       };
 
