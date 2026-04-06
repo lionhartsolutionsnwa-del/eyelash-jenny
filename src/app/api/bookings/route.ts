@@ -2,10 +2,15 @@ import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Prevent static pre-rendering — env vars aren't available at build time
+export const dynamic = 'force-dynamic';
+
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 interface ServiceInfo {
   name: string;
@@ -19,6 +24,7 @@ export async function GET(request: NextRequest) {
   const date = searchParams.get('date');       // YYYY-MM-DD
   const status = searchParams.get('status');   // filter by status
 
+  const supabase = getSupabase();
   let query = supabase
     .from('bookings')
     .select(
@@ -107,6 +113,7 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
+  const supabase = getSupabase();
   const result = publicBookingSchema.safeParse(body);
   if (!result.success) {
     return Response.json(

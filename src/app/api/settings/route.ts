@@ -36,8 +36,7 @@ export async function PUT(request: NextRequest) {
 
   const { data, error } = await getAdminClient()
     .from('settings')
-    .update({ value, updated_at: new Date().toISOString() })
-    .eq('key', key)
+    .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' })
     .select()
     .single();
 

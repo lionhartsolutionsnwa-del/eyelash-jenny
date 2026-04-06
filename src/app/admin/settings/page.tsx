@@ -22,10 +22,11 @@ interface Service {
 export default function SettingsPage() {
   const { lang } = useLang();
   // Business Info
-  const [businessName, setBusinessName] = useState('Jenny Professional Eyelash');
-  const [businessPhone, setBusinessPhone] = useState('(555) 000-1234');
-  const [businessAddress, setBusinessAddress] = useState('123 Beauty Lane, Suite 4, Los Angeles, CA 90001');
+  const [businessName, setBusinessName] = useState('');
+  const [businessPhone, setBusinessPhone] = useState('');
+  const [businessAddress, setBusinessAddress] = useState('');
   const [timezone, setTimezone] = useState('America/Los_Angeles');
+  const [savingBusiness, setSavingBusiness] = useState(false);
 
   // Services
   const [services, setServices] = useState<Service[]>([]);
@@ -34,38 +35,101 @@ export default function SettingsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Notifications
-  const [smsEnabled, setSmsEnabled] = useState(true);
-  const [adminPhone, setAdminPhone] = useState('(555) 000-1234');
+  const [smsEnabled, setSmsEnabled] = useState(false);
+  const [adminPhone, setAdminPhone] = useState('');
   const [reminder24h, setReminder24h] = useState(true);
   const [reminder1h, setReminder1h] = useState(true);
+  const [savingNotifications, setSavingNotifications] = useState(false);
 
-  // Fetch services on mount
+  // Fetch settings + services on mount
   useEffect(() => {
-    async function fetchServices() {
+    async function fetchAll() {
       try {
-        const res = await fetch('/api/services');
-        if (!res.ok) throw new Error('Failed to fetch services');
-        const data = await res.json();
-        // Map duration_minutes from API to duration in local state
-        setServices(
-          data.map((s: { id: string; name: string; price: number; duration_minutes: number; description: string; active: boolean }) => ({
-            id: s.id,
-            name: s.name,
-            price: s.price,
-            duration: s.duration_minutes,
-            description: s.description,
-            active: s.active,
-          }))
-        );
+        const [settingsRes, servicesRes] = await Promise.all([
+          fetch('/api/settings'),
+          fetch('/api/services'),
+        ]);
+
+        if (settingsRes.ok) {
+          const settings: { key: string; value: unknown }[] = await settingsRes.json();
+          const map = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+          if (map.business_name) setBusinessName(map.business_name as string);
+          if (map.business_phone) setBusinessPhone(map.business_phone as string);
+          if (map.business_address) setBusinessAddress(map.business_address as string);
+          if (map.timezone) setTimezone(map.timezone as string);
+          if (map.sms_notifications_enabled !== undefined) setSmsEnabled(!!map.sms_notifications_enabled);
+          if (map.admin_phone) setAdminPhone(map.admin_phone as string);
+          if (map.reminder_24h !== undefined) setReminder24h(!!map.reminder_24h);
+          if (map.reminder_1h !== undefined) setReminder1h(!!map.reminder_1h);
+        }
+
+        if (servicesRes.ok) {
+          const data = await servicesRes.json();
+          setServices(
+            data.map((s: { id: string; name: string; price: number; duration_minutes: number; description: string; active: boolean }) => ({
+              id: s.id,
+              name: s.name,
+              price: s.price,
+              duration: s.duration_minutes,
+              description: s.description,
+              active: s.active,
+            }))
+          );
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');
-        console.error('Error fetching services:', err);
+        console.error('Error fetching settings:', err);
       } finally {
         setLoading(false);
       }
     }
-    fetchServices();
+    fetchAll();
   }, []);
+
+  async function saveSetting(key: string, value: unknown) {
+    const res = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key, value }),
+    });
+    if (!res.ok) throw new Error(`Failed to save ${key}`);
+  }
+
+  async function saveBusinessInfo() {
+    setSavingBusiness(true);
+    try {
+      await Promise.all([
+        saveSetting('business_name', businessName),
+        saveSetting('business_phone', businessPhone),
+        saveSetting('business_address', businessAddress),
+        saveSetting('timezone', timezone),
+      ]);
+      alert(lang === 'en' ? 'Business info saved!' : '商家信息已保存！');
+    } catch (err) {
+      console.error('Error saving business info:', err);
+      alert(lang === 'en' ? 'Failed to save. Please try again.' : '保存失败，请重试。');
+    } finally {
+      setSavingBusiness(false);
+    }
+  }
+
+  async function saveNotificationSettings() {
+    setSavingNotifications(true);
+    try {
+      await Promise.all([
+        saveSetting('sms_notifications_enabled', smsEnabled),
+        saveSetting('admin_phone', adminPhone),
+        saveSetting('reminder_24h', reminder24h),
+        saveSetting('reminder_1h', reminder1h),
+      ]);
+      alert(lang === 'en' ? 'Notification settings saved!' : '通知设置已保存！');
+    } catch (err) {
+      console.error('Error saving notifications:', err);
+      alert(lang === 'en' ? 'Failed to save. Please try again.' : '保存失败，请重试。');
+    } finally {
+      setSavingNotifications(false);
+    }
+  }
 
   async function updateService(id: string, field: keyof Service, value: string | number | boolean) {
     // Optimistically update local state
@@ -247,7 +311,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="mt-4">
-          <Button variant="gold" size="sm"><span className="only-en">Save Business Info</span><span className="only-zh">保存商家信息</span></Button>
+          <Button variant="gold" size="sm" onClick={saveBusinessInfo} loading={savingBusiness}><span className="only-en">Save Business Info</span><span className="only-zh">保存商家信息</span></Button>
         </div>
       </Card>
 
@@ -405,7 +469,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="mt-4">
-          <Button variant="gold" size="sm" onClick={() => window.alert(lang === 'en' ? "Notification settings saved!" : "通知设置已保存！")}><span className="only-en">Save Notification Settings</span><span className="only-zh">保存通知设置</span></Button>
+          <Button variant="gold" size="sm" onClick={saveNotificationSettings} loading={savingNotifications}><span className="only-en">Save Notification Settings</span><span className="only-zh">保存通知设置</span></Button>
         </div>
       </Card>
     </div>
