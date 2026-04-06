@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { upsertContact, addNote } from '@/lib/ghl';
 
 // Prevent static pre-rendering — env vars aren't available at build time
 export const dynamic = 'force-dynamic';
@@ -266,6 +267,32 @@ export async function POST(request: NextRequest) {
     .select('*, services(name, price, duration_minutes)')
     .eq('id', booking.id)
     .single();
+
+  // 11. Sync to GoHighLevel (non-blocking — never fail the booking if GHL is down)
+  if (process.env.GHL_API_KEY && process.env.GHL_LOCATION_ID) {
+    const nameParts = input.client_name.trim().split(/\s+/);
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(' ') || undefined;
+
+    upsertContact({
+      firstName,
+      lastName,
+      phone: input.client_phone.replace(/\D/g, ''),
+      email: input.client_email || undefined,
+      tags: ['booking', 'website'],
+    }).then(async (contactId) => {
+      if (contactId) {
+        const noteBody = [
+          `New booking from website`,
+          `Service: ${svc.name}`,
+          `Date: ${input.date} at ${toHHMM(input.start_time)}`,
+          `SMS reminders consent: ${input.sms_reminders_consent ? 'Yes' : 'No'}`,
+          `SMS marketing consent: ${input.sms_marketing_consent ? 'Yes' : 'No'}`,
+        ].join('\n');
+        await addNote({ contactId, body: noteBody });
+      }
+    }).catch((err) => console.error('[GHL] Background sync error:', err));
+  }
 
   return Response.json(bookingWithServices ?? booking, { status: 201 });
 }
