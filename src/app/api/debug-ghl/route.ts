@@ -34,6 +34,7 @@ export async function GET() {
   const createBody = await createRes.text();
 
   return Response.json({
+    tokenSuffix: apiKey.slice(-8),
     search: { status: searchRes.status, body: JSON.parse(searchBody) },
     create: { status: createRes.status, body: JSON.parse(createBody) },
   });
