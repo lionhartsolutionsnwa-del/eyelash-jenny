@@ -37,6 +37,8 @@ interface WizardState {
   phone: string
   email: string
   notes: string
+  smsReminders: boolean
+  smsMarketing: boolean
   errors: Record<string, string>
   submitting: boolean
   loadingServices: boolean
@@ -48,6 +50,7 @@ type WizardAction =
   | { type: 'SET_DATE'; payload: Date }
   | { type: 'SET_TIME'; payload: string }
   | { type: 'SET_FIELD'; field: string; value: string }
+  | { type: 'TOGGLE_BOOL'; field: 'smsReminders' | 'smsMarketing' }
   | { type: 'SET_ERRORS'; payload: Record<string, string> }
   | { type: 'NEXT' }
   | { type: 'BACK' }
@@ -69,6 +72,12 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
       return {
         ...state,
         [action.field]: action.value,
+        errors: { ...state.errors, [action.field]: '' },
+      }
+    case 'TOGGLE_BOOL':
+      return {
+        ...state,
+        [action.field]: !state[action.field],
         errors: { ...state.errors, [action.field]: '' },
       }
     case 'SET_ERRORS':
@@ -155,6 +164,8 @@ function BookingWizardInner() {
     phone: '',
     email: '',
     notes: '',
+    smsReminders: false,
+    smsMarketing: false,
     errors: {},
     submitting: false,
     loadingServices: true,
@@ -233,6 +244,9 @@ function BookingWizardInner() {
       if (!phoneClean || phoneClean.length < 10) {
         errors.phone = 'Please enter a valid phone number'
       }
+      if (!state.smsReminders) {
+        errors.smsReminders = 'Please agree to receive appointment reminders'
+      }
       if (Object.keys(errors).length > 0) {
         dispatch({ type: 'SET_ERRORS', payload: errors })
         return
@@ -247,12 +261,14 @@ function BookingWizardInner() {
     dispatch({ type: 'SUBMIT' })
 
     try {
-      const payload: Record<string, string> = {
+      const payload: Record<string, string | boolean> = {
         client_name: state.name.trim(),
         client_phone: state.phone.replace(/\D/g, ''),
         service_id: state.service!.id,
         date: formatDateISO(state.date!),
         start_time: formatTimeForAPI(state.time),
+        sms_reminders_consent: state.smsReminders,
+        sms_marketing_consent: state.smsMarketing,
       }
       if (state.email.trim()) payload.client_email = state.email.trim()
       if (state.notes.trim()) payload.notes = state.notes.trim()
@@ -295,7 +311,7 @@ function BookingWizardInner() {
       case 1:
         return !!state.date && !!state.time
       case 2:
-        return state.name.trim().length >= 2 && state.phone.replace(/\D/g, '').length >= 10
+        return state.name.trim().length >= 2 && state.phone.replace(/\D/g, '').length >= 10 && state.smsReminders
       default:
         return true
     }
@@ -495,6 +511,41 @@ function BookingWizardInner() {
                 <label className="pointer-events-none absolute left-4 top-1.5 text-xs text-navy-light font-body">
                   Notes (optional)
                 </label>
+              </div>
+
+              {/* SMS consent */}
+              <div className="flex flex-col gap-3 pt-1">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={state.smsReminders}
+                    onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsReminders' })}
+                    className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                  />
+                  <span className="font-body text-sm text-navy leading-snug">
+                    I agree to receive appointment reminders and confirmations via SMS.{' '}
+                    <span className="text-red-500">*</span>
+                  </span>
+                </label>
+                {state.errors.smsReminders && (
+                  <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.smsReminders}</p>
+                )}
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={state.smsMarketing}
+                    onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsMarketing' })}
+                    className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                  />
+                  <span className="font-body text-sm text-navy-light leading-snug">
+                    I'd also like to receive exclusive offers and promotions via SMS. (optional)
+                  </span>
+                </label>
+
+                <p className="font-body text-xs text-gray ml-7">
+                  Message & data rates may apply. Reply STOP to opt out at any time.
+                </p>
               </div>
             </div>
           </div>

@@ -85,6 +85,8 @@ const publicBookingSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format'),
   start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Time must be HH:MM or HH:MM:SS format'),
   service_id: z.string().uuid('Please select a service'),
+  sms_reminders_consent: z.boolean().refine((v) => v === true, 'You must agree to receive appointment reminders'),
+  sms_marketing_consent: z.boolean().optional().default(false),
 });
 
 // Helper to strip seconds: "09:00:00" -> "09:00"
@@ -247,6 +249,8 @@ export async function POST(request: NextRequest) {
       end_time: endTime,
       service_id: input.service_id,
       status: 'pending',
+      sms_reminders_consent: input.sms_reminders_consent,
+      sms_marketing_consent: input.sms_marketing_consent ?? false,
     })
     .select()
     .single();

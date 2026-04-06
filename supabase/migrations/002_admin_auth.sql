@@ -48,9 +48,9 @@ CREATE POLICY "Anyone can manage admin_sessions" ON admin_sessions FOR ALL USING
 -- Edison: +18328606170, Edison123!
 -- Mo: +14799667198, Mo123!
 INSERT INTO admin_users (phone, password_hash, name, role) VALUES
-  ('+14793297979', '$2b$10$TCIORWBKWJjlZLqm0j3EJucFPopJ2qUAyqwyKa.iB91gZk/aozPtW', 'Jenny', 'owner'),
-  ('+18328606170', '$2b$10$0gMMtPdn6HlXwx.I5ShZX.QsU/vMvQCQRw2XVE8yMauTUjq4fsEIi', 'Edison', 'owner'),
-  ('+14799667198', '$2b$10$4DdpviBcX1hLgaBvBn41VuoSB5aK3thaF7zgzCbwJNLxXFvJ9QLZG', 'Mo', 'staff')
+  ('+14793297979', '$2b$10$TCIORWBKWJjlZLqm0j3EJucFPopJ2qUAyqwyKa.iB91gZk/aozPtW', 'Jenny', 'employee'),
+  ('+18328606170', '$2b$10$0gMMtPdn6HlXwx.I5ShZX.QsU/vMvQCQRw2XVE8yMauTUjq4fsEIi', 'Edison', 'manager'),
+  ('+14799667198', '$2b$10$4DdpviBcX1hLgaBvBn41VuoSB5aK3thaF7zgzCbwJNLxXFvJ9QLZG', 'Mo', 'manager')
 ON CONFLICT (phone) DO UPDATE SET
   password_hash = EXCLUDED.password_hash,
   name = EXCLUDED.name,
