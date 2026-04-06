@@ -1,35 +1,40 @@
-import { upsertContact } from '@/lib/ghl';
-
 export const dynamic = 'force-dynamic';
 
 // Temporary debug endpoint — DELETE after testing
 // GET /api/debug-ghl
 export async function GET() {
-  const envCheck = {
-    GHL_API_KEY: !!process.env.GHL_API_KEY,
-    GHL_LOCATION_ID: !!process.env.GHL_LOCATION_ID,
-    GHL_FIELD_ID_DATE: !!process.env.GHL_FIELD_ID_DATE,
-    GHL_FIELD_ID_TIME: !!process.env.GHL_FIELD_ID_TIME,
-    GHL_FIELD_ID_SERVICE: !!process.env.GHL_FIELD_ID_SERVICE,
-  };
+  const apiKey = process.env.GHL_API_KEY!;
+  const locationId = process.env.GHL_LOCATION_ID!;
 
-  let contactId: string | null = null;
-  let error: string | null = null;
+  // Step 1: search
+  const searchRes = await fetch(
+    `https://services.leadconnectorhq.com/contacts/?locationId=${locationId}&query=%2B15550000099`,
+    { headers: { Authorization: `Bearer ${apiKey}`, Version: '2021-07-28' } }
+  );
+  const searchBody = await searchRes.text();
 
-  try {
-    contactId = await upsertContact({
+  // Step 2: create
+  const createRes = await fetch('https://services.leadconnectorhq.com/contacts/', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, Version: '2021-07-28', 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      locationId,
       firstName: 'DebugTest',
       lastName: 'FromVercel',
-      phone: '5550000001',
-      email: 'debug@test.com',
+      phone: '+15550000099',
       tags: ['debug'],
-      appointmentDate: '2026-04-10',
-      appointmentTime: '10:00',
-      appointmentService: 'Classic Lashes',
-    });
-  } catch (e) {
-    error = String(e);
-  }
+      source: 'website',
+      customFields: [
+        { id: process.env.GHL_FIELD_ID_DATE, field_value: '2026-04-10' },
+        { id: process.env.GHL_FIELD_ID_TIME, field_value: '10:00' },
+        { id: process.env.GHL_FIELD_ID_SERVICE, field_value: 'Classic Lashes' },
+      ],
+    }),
+  });
+  const createBody = await createRes.text();
 
-  return Response.json({ envCheck, contactId, error });
+  return Response.json({
+    search: { status: searchRes.status, body: JSON.parse(searchBody) },
+    create: { status: createRes.status, body: JSON.parse(createBody) },
+  });
 }
