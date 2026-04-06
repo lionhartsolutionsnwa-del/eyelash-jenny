@@ -278,9 +278,12 @@ export async function POST(request: NextRequest) {
       const contactId = await upsertContact({
         firstName,
         lastName,
-        phone: input.client_phone.replace(/\D/g, ''),
+        phone: input.client_phone,
         email: input.client_email || undefined,
         tags: ['booking', 'website'],
+        appointmentDate: input.date,
+        appointmentTime: toHHMM(input.start_time),
+        appointmentService: svc.name,
       });
 
       if (contactId) {

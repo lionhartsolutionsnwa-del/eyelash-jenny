@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { SOCIAL_LINKS } from '@/lib/constants'
 
 const SERVICES: Record<string, { name: string; duration: string; price: number }> = {
   classic: { name: 'Classic Lashes', duration: '2 hours', price: 119 },
