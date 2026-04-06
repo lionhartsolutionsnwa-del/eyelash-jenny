@@ -717,8 +717,12 @@ function CalendarPicker({
     year: 'numeric',
   })
 
+  // Calendar grid: always show a full 6-week window (42 cells) so the grid
+  // never "jumps" between months. Trailing days from the prev month and
+  // leading days from the next month are shown but disabled.
   const firstDay = new Date(viewYear, viewMonth, 1).getDay()
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
+  const daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate()
 
   const canGoBack =
     viewYear > today.getFullYear() ||
@@ -743,9 +747,30 @@ function CalendarPicker({
     }
   }
 
-  const days: (number | null)[] = []
-  for (let i = 0; i < firstDay; i++) days.push(null)
-  for (let d = 1; d <= daysInMonth; d++) days.push(d)
+  // Build a flat 42-cell grid (6 rows × 7 cols)
+  type DayCell = { day: number; month: number; year: number; label: string }
+  const cells: DayCell[] = []
+
+  // Trailing days from previous month (fill the first row to Sunday)
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrevMonth - firstDay + 1 + i
+    const prevMonth = viewMonth === 0 ? 11 : viewMonth - 1
+    const prevYear = viewMonth === 0 ? viewYear - 1 : viewYear
+    cells.push({ day: d, month: prevMonth, year: prevYear, label: 'prev' })
+  }
+
+  // Days of current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, month: viewMonth, year: viewYear, label: 'cur' })
+  }
+
+  // Leading days from next month to fill the 42-cell grid
+  const remaining = 42 - cells.length
+  for (let d = 1; d <= remaining; d++) {
+    const nextMonth = viewMonth === 11 ? 0 : viewMonth + 1
+    const nextYear = viewMonth === 11 ? viewYear + 1 : viewYear
+    cells.push({ day: d, month: nextMonth, year: nextYear, label: 'next' })
+  }
 
   return (
     <div>
@@ -786,32 +811,33 @@ function CalendarPicker({
 
       {/* Days grid */}
       <div className="grid grid-cols-7 gap-1">
-        {days.map((day, i) => {
-          if (!day) return <div key={`empty-${i}`} />
-          const date = new Date(viewYear, viewMonth, day)
+        {cells.map((cell, i) => {
+          const date = new Date(cell.year, cell.month, cell.day)
+          const isPast = isBeforeToday(date)
+          const isCurrentMonth = cell.label === 'cur'
           const isSelected =
             selectedDate &&
-            selectedDate.getDate() === day &&
-            selectedDate.getMonth() === viewMonth &&
-            selectedDate.getFullYear() === viewYear
-          const isPast = isBeforeToday(date)
+            selectedDate.getDate() === cell.day &&
+            selectedDate.getMonth() === cell.month &&
+            selectedDate.getFullYear() === cell.year
           const isToday = date.toDateString() === today.toDateString()
 
           return (
             <button
-              key={day}
+              key={`${cell.label}-${i}`}
               type="button"
-              disabled={isPast}
-              onClick={() => onSelect(date)}
+              disabled={isPast || !isCurrentMonth}
+              onClick={() => isCurrentMonth && !isPast && onSelect(date)}
               className={[
-                'w-full aspect-square rounded-xl font-body text-sm flex items-center justify-center cursor-pointer transition-all duration-150',
-                isPast ? 'opacity-30 cursor-not-allowed' : 'hover:bg-gold/20',
-                isSelected ? 'bg-gold text-navy font-semibold' : '',
-                !isSelected && !isPast ? 'text-navy' : '',
+                'w-full aspect-square rounded-xl font-body text-sm flex items-center justify-center transition-all duration-150',
+                !isCurrentMonth || isPast ? 'opacity-20 cursor-not-allowed' : 'hover:bg-gold/20 cursor-pointer',
+                isSelected && isCurrentMonth ? 'bg-gold text-navy font-semibold' : '',
+                !isSelected && isCurrentMonth && !isPast ? 'text-navy' : '',
                 isToday && !isSelected ? 'ring-1 ring-gold/40' : '',
+                !isCurrentMonth ? 'text-gray-light' : '',
               ].join(' ')}
             >
-              {day}
+              {cell.day}
             </button>
           )
         })}
