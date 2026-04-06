@@ -13,28 +13,11 @@ export async function GET() {
   );
   const searchBody = await searchRes.text();
 
-  // Step 2: create
+  // Step 2: bare minimum POST
   const createRes = await fetch('https://services.leadconnectorhq.com/contacts/', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, Version: '2021-07-28', 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      locationId,
-      firstName: 'DebugTest',
-      lastName: 'FromVercel',
-      phone: '+15550000099',
-      tags: ['debug'],
-      source: 'website',
-      customFields: [
-        { id: process.env.GHL_FIELD_ID_DATE?.trim(), field_value: '2026-04-10' },
-        { id: process.env.GHL_FIELD_ID_TIME?.trim(), field_value: '10:00' },
-        { id: process.env.GHL_FIELD_ID_SERVICE?.trim(), field_value: 'Classic Lashes' },
-      ],
-      fieldIdSuffixes: {
-        date: process.env.GHL_FIELD_ID_DATE?.slice(-4),
-        time: process.env.GHL_FIELD_ID_TIME?.slice(-4),
-        service: process.env.GHL_FIELD_ID_SERVICE?.slice(-4),
-      },
-    }),
+    body: JSON.stringify({ locationId, firstName: 'DebugBare', phone: '+15550000066' }),
   });
   const createBody = await createRes.text();
 
