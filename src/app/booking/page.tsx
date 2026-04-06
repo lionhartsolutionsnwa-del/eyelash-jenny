@@ -105,6 +105,13 @@ function reducer(state: WizardState, action: WizardAction): WizardState {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
+function formatPhoneDisplay(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 10)
+  if (digits.length <= 3) return digits
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
+}
+
 function formatDateLong(date: Date): string {
   return date.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -490,7 +497,7 @@ function BookingWizardInner() {
                 placeholder="(555) 123-4567"
                 value={state.phone}
                 error={state.errors.phone}
-                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'phone', value: e.target.value })}
+                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'phone', value: formatPhoneDisplay(e.target.value) })}
               />
               <Input
                 label="Email (optional)"
@@ -643,7 +650,7 @@ function BookingWizardInner() {
                 Confirm Booking
               </Button>
               <p className="font-body text-xs text-gray text-center max-w-sm">
-                By confirming, you agree to our cancellation policy. We will send a confirmation to your phone.
+                By confirming, you agree to our cancellation policy. A confirmation will be sent to your email if provided.
               </p>
             </div>
           </div>

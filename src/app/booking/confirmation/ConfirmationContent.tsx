@@ -38,7 +38,7 @@ function ConfirmationContent() {
   const calStartStr = calStart.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
   const calEnd = new Date(calStart.getTime() + 2.5 * 60 * 60 * 1000)
   const calEndStr = calEnd.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-  const calUrl = `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${encodeURIComponent(service.name + ' - Jenny Professional Eyelash')}&dates=${calStartStr}/${calEndStr}&details=${encodeURIComponent('Your lash appointment at Jenny Professional Eyelash. Come with clean, makeup-free lashes.')}&location=${encodeURIComponent('123 Beauty Lane, Suite 4, Los Angeles, CA 90001')}`
+  const calUrl = `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${encodeURIComponent(service.name + ' - Jenny Professional Eyelash')}&dates=${calStartStr}/${calEndStr}&details=${encodeURIComponent('Your lash appointment at Jenny Professional Eyelash. Come with clean, makeup-free lashes.')}&location=${encodeURIComponent('456 Lash Blvd, Suite 10, Houston, TX 77001')}`
 
   useEffect(() => {
     const timer = setTimeout(() => setShowCheck(true), 100)
@@ -86,7 +86,7 @@ function ConfirmationContent() {
         Booking Confirmed!
       </h1>
       <p className="mt-3 font-body text-base text-navy-light max-w-md mx-auto">
-        We are looking forward to seeing you. A confirmation text will be sent to your phone.
+        We are looking forward to seeing you. A confirmation email will be sent if you provided one.
       </p>
 
       {/* Summary card */}
@@ -200,7 +200,9 @@ function ConfirmationContent() {
           See our latest work and get lash care tips.
         </p>
         <a
-          href="#"
+          href={SOCIAL_LINKS.instagram}
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex items-center gap-2 mt-4 font-body text-sm font-medium text-gold-dark hover:text-navy transition-colors duration-200"
         >
           <svg
@@ -217,7 +219,7 @@ function ConfirmationContent() {
             <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
             <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
           </svg>
-          @jennyprolash
+          @jennyprofessionaleyelash
         </a>
       </div>
     </div>
