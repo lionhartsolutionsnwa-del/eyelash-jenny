@@ -268,19 +268,21 @@ export async function POST(request: NextRequest) {
     .eq('id', booking.id)
     .single();
 
-  // 11. Sync to GoHighLevel (non-blocking — never fail the booking if GHL is down)
+  // 11. Sync to GoHighLevel — awaited before response (serverless functions terminate on return)
   if (process.env.GHL_API_KEY && process.env.GHL_LOCATION_ID) {
-    const nameParts = input.client_name.trim().split(/\s+/);
-    const firstName = nameParts[0];
-    const lastName = nameParts.slice(1).join(' ') || undefined;
+    try {
+      const nameParts = input.client_name.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || undefined;
 
-    upsertContact({
-      firstName,
-      lastName,
-      phone: input.client_phone.replace(/\D/g, ''),
-      email: input.client_email || undefined,
-      tags: ['booking', 'website'],
-    }).then(async (contactId) => {
+      const contactId = await upsertContact({
+        firstName,
+        lastName,
+        phone: input.client_phone.replace(/\D/g, ''),
+        email: input.client_email || undefined,
+        tags: ['booking', 'website'],
+      });
+
       if (contactId) {
         const noteBody = [
           `New booking from website`,
@@ -291,7 +293,10 @@ export async function POST(request: NextRequest) {
         ].join('\n');
         await addNote({ contactId, body: noteBody });
       }
-    }).catch((err) => console.error('[GHL] Background sync error:', err));
+    } catch (err) {
+      console.error('[GHL] Sync error:', err);
+      // Never fail the booking if GHL is down
+    }
   }
 
   return Response.json(bookingWithServices ?? booking, { status: 201 });
