@@ -18,7 +18,9 @@ export function InstagramFeed() {
               Follow Our Work
             </h2>
             <a
-              href="#"
+              href="https://www.instagram.com/eyelashjenny1996?igsh=MjJpdW9zYzVyYzdp&utm_source=qr"
+              target="_blank"
+              rel="noopener noreferrer"
               className="inline-flex items-center gap-2 mt-3 text-navy-light font-body hover:text-gold-dark transition-transform transition-opacity duration-200"
             >
               {/* Instagram icon */}
@@ -27,7 +29,7 @@ export function InstagramFeed() {
                 <path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z" />
                 <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
               </svg>
-              <span className="text-lg">@jennyprolash</span>
+              <span className="text-lg">@eyelashjenny1996</span>
             </a>
           </div>
         </ScrollReveal>

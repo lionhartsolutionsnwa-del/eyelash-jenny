@@ -38,10 +38,12 @@ function Footer() {
               </p>
               {/* Social icons */}
               <div className="flex gap-4 mt-1">
-                {/* Instagram placeholder */}
+                {/* Instagram */}
                 <a
-                  href="#"
+                  href="https://www.instagram.com/eyelashjenny1996?igsh=MjJpdW9zYzVyYzdp&utm_source=qr"
                   aria-label="Instagram"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/50 transition-colors duration-200 hover:border-gold hover:text-gold"
                 >
                   <svg
@@ -58,22 +60,6 @@ function Footer() {
                     <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
                     <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
                     <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
-                  </svg>
-                </a>
-                {/* TikTok placeholder */}
-                <a
-                  href="#"
-                  aria-label="TikTok"
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 text-white/50 transition-colors duration-200 hover:border-gold hover:text-gold"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1 0-5.78 2.92 2.92 0 0 1 .88.13V9.03a6.28 6.28 0 0 0-.88-.07 6.29 6.29 0 0 0 0 12.58 6.29 6.29 0 0 0 6.28-6.29V8.83a8.19 8.19 0 0 0 3.82.96V6.69z" />
                   </svg>
                 </a>
               </div>
