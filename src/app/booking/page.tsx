@@ -33,12 +33,14 @@ interface WizardState {
   service: Service | null
   date: Date | null
   time: string
-  name: string
+  firstName: string
+  lastName: string
   phone: string
   email: string
   notes: string
   smsReminders: boolean
   smsMarketing: boolean
+  emailConsent: boolean
   errors: Record<string, string>
   submitting: boolean
   loadingServices: boolean
@@ -50,7 +52,7 @@ type WizardAction =
   | { type: 'SET_DATE'; payload: Date }
   | { type: 'SET_TIME'; payload: string }
   | { type: 'SET_FIELD'; field: string; value: string }
-  | { type: 'TOGGLE_BOOL'; field: 'smsReminders' | 'smsMarketing' }
+  | { type: 'TOGGLE_BOOL'; field: 'smsReminders' | 'smsMarketing' | 'emailConsent' }
   | { type: 'SET_ERRORS'; payload: Record<string, string> }
   | { type: 'NEXT' }
   | { type: 'BACK' }
@@ -167,12 +169,14 @@ function BookingWizardInner() {
     service: null,
     date: null,
     time: '',
-    name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
     email: '',
     notes: '',
     smsReminders: false,
     smsMarketing: false,
+    emailConsent: false,
     errors: {},
     submitting: false,
     loadingServices: true,
@@ -198,7 +202,9 @@ function BookingWizardInner() {
         // Pre-select if service param was passed
         if (preselected) {
           const match = loaded.find(
-            (s) => s.name.toLowerCase().replace(/\s+/g, '-') === preselected
+            (s) =>
+              s.name.toLowerCase().replace(/\s+/g, '-') === preselected ||
+              s.id === preselected
           )
           if (match) dispatch({ type: 'SET_SERVICE', payload: match })
         }
@@ -206,9 +212,17 @@ function BookingWizardInner() {
         console.error('Failed to load services:', err)
         // Fallback to hardcoded
         setServices([
-          { id: 'classic', name: 'Classic Lashes', price: 119, duration_minutes: 120, description: 'One extension per natural lash.' },
-          { id: 'hybrid', name: 'Hybrid Lashes', price: 149, duration_minutes: 150, description: 'Mixed classic and volume.', popular: true },
-          { id: 'removal', name: 'Lash Removal', price: 25, duration_minutes: 30, description: 'Safe removal.' },
+          // Full Sets
+          { id: 'classic',      name: 'Classic Lashes',          price: 119, duration_minutes: 60,  description: 'One extension per natural lash for a natural, elegant look.' },
+          { id: 'hybrid',       name: 'Hybrid Lashes',           price: 149, duration_minutes: 80,  description: 'Mix of classic and volume for added texture and drama.', popular: true },
+          { id: 'volume',       name: 'Volume Lashes',           price: 189, duration_minutes: 100, description: 'Lush 3D–6D fans for a full, fluffy, camera-ready look.' },
+          { id: 'wispy',        name: 'Wispy Lashes',            price: 169, duration_minutes: 150, description: 'Spiked, textured fans for a trendy editorial finish.' },
+          // Fills
+          { id: 'classic-fill', name: 'Classic Fill',            price: 75,  duration_minutes: 60,  description: 'Refresh your classic set. Best within 2–3 weeks.' },
+          { id: 'hybrid-fill',  name: 'Hybrid Fill',             price: 95,  duration_minutes: 75,  description: 'Refresh your hybrid set. Best within 2–3 weeks.' },
+          { id: 'volume-fill',  name: 'Volume Fill',             price: 115, duration_minutes: 75,  description: 'Refresh your volume set. Best within 2–3 weeks.' },
+          // Treatments
+          { id: 'lash-removal', name: 'Lash Removal + New Set',  price: 159, duration_minutes: 90,  description: 'Gentle removal of existing extensions followed by a fresh new set. Pricing depends on extensions selected.' },
         ])
       } finally {
         dispatch({ type: 'SET_SERVICES_LOADING', payload: false })
@@ -244,15 +258,24 @@ function BookingWizardInner() {
   const handleNext = useCallback(() => {
     if (state.step === 2) {
       const errors: Record<string, string> = {}
-      if (!state.name || state.name.trim().length < 2) {
-        errors.name = 'Please enter your name (at least 2 characters)'
+      if (!state.firstName || state.firstName.trim().length < 2) {
+        errors.firstName = 'Please enter your first name'
+      }
+      if (!state.lastName || state.lastName.trim().length < 1) {
+        errors.lastName = 'Please enter your last name'
       }
       const phoneClean = state.phone.replace(/\D/g, '')
       if (!phoneClean || phoneClean.length < 10) {
         errors.phone = 'Please enter a valid phone number'
       }
+      if (!state.email || !state.email.includes('@')) {
+        errors.email = 'Please enter a valid email address'
+      }
       if (!state.smsReminders) {
-        errors.smsReminders = 'Please agree to receive appointment reminders'
+        errors.smsReminders = 'Please agree to receive SMS reminders'
+      }
+      if (!state.emailConsent) {
+        errors.emailConsent = 'Please agree to receive email confirmations'
       }
       if (Object.keys(errors).length > 0) {
         dispatch({ type: 'SET_ERRORS', payload: errors })
@@ -260,7 +283,7 @@ function BookingWizardInner() {
       }
     }
     dispatch({ type: 'NEXT' })
-  }, [state.step, state.name, state.phone])
+  }, [state.step, state.firstName, state.lastName, state.phone, state.email, state.smsReminders, state.emailConsent])
 
   const handleConfirm = useCallback(async () => {
     if (!state.service || !state.date || !state.time) return
@@ -269,7 +292,7 @@ function BookingWizardInner() {
 
     try {
       const payload: Record<string, string | boolean> = {
-        client_name: state.name.trim(),
+        client_name: `${state.firstName.trim()} ${state.lastName.trim()}`,
         client_phone: state.phone.replace(/\D/g, ''),
         service_id: state.service!.id,
         date: formatDateISO(state.date!),
@@ -301,7 +324,7 @@ function BookingWizardInner() {
         service: state.service!.name,
         date: formatDateISO(state.date!),
         time: state.time,
-        name: state.name,
+        name: `${state.firstName.trim()} ${state.lastName.trim()}`,
         phone: state.phone,
       })
       router.push(`/booking/confirmation?${params.toString()}`)
@@ -318,11 +341,18 @@ function BookingWizardInner() {
       case 1:
         return !!state.date && !!state.time
       case 2:
-        return state.name.trim().length >= 2 && state.phone.replace(/\D/g, '').length >= 10 && state.smsReminders
+        return (
+          state.firstName.trim().length >= 2 &&
+          state.lastName.trim().length >= 1 &&
+          state.phone.replace(/\D/g, '').length >= 10 &&
+          state.email.includes('@') &&
+          state.smsReminders &&
+          state.emailConsent
+        )
       default:
         return true
     }
-  }, [state.step, state.service, state.date, state.time, state.name, state.phone])
+  }, [state.step, state.service, state.date, state.time, state.firstName, state.lastName, state.phone, state.email, state.smsReminders, state.emailConsent])
 
   function formatDuration(minutes: number): string {
     if (minutes < 60) return `${minutes} min`
@@ -481,14 +511,24 @@ function BookingWizardInner() {
             </p>
 
             <div className="flex flex-col gap-5 max-w-md">
-              <Input
-                label="Full Name"
-                name="name"
-                required
-                value={state.name}
-                error={state.errors.name}
-                onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'name', value: e.target.value })}
-              />
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="First Name"
+                  name="firstName"
+                  required
+                  value={state.firstName}
+                  error={state.errors.firstName}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'firstName', value: e.target.value })}
+                />
+                <Input
+                  label="Last Name"
+                  name="lastName"
+                  required
+                  value={state.lastName}
+                  error={state.errors.lastName}
+                  onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'lastName', value: e.target.value })}
+                />
+              </div>
               <Input
                 label="Phone Number"
                 name="phone"
@@ -500,10 +540,12 @@ function BookingWizardInner() {
                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'phone', value: formatPhoneDisplay(e.target.value) })}
               />
               <Input
-                label="Email (optional)"
+                label="Email Address"
                 name="email"
                 type="email"
+                required
                 value={state.email}
+                error={state.errors.email}
                 onChange={(e) => dispatch({ type: 'SET_FIELD', field: 'email', value: e.target.value })}
               />
               <div className="relative">
@@ -520,7 +562,7 @@ function BookingWizardInner() {
                 </label>
               </div>
 
-              {/* SMS consent */}
+              {/* Consent */}
               <div className="flex flex-col gap-3 pt-1">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
@@ -536,6 +578,22 @@ function BookingWizardInner() {
                 </label>
                 {state.errors.smsReminders && (
                   <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.smsReminders}</p>
+                )}
+
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={state.emailConsent}
+                    onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'emailConsent' })}
+                    className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                  />
+                  <span className="font-body text-sm text-navy leading-snug">
+                    I agree to receive booking confirmations and updates via email.{' '}
+                    <span className="text-red-500">*</span>
+                  </span>
+                </label>
+                {state.errors.emailConsent && (
+                  <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.emailConsent}</p>
                 )}
 
                 <label className="flex items-start gap-3 cursor-pointer">
@@ -608,20 +666,24 @@ function BookingWizardInner() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="font-body text-xs text-gray uppercase tracking-wider">Name</p>
-                    <p className="font-body text-base text-navy mt-1">{state.name}</p>
+                    <p className="font-body text-xs text-gray uppercase tracking-wider">First Name</p>
+                    <p className="font-body text-base text-navy mt-1">{state.firstName}</p>
                   </div>
+                  <div>
+                    <p className="font-body text-xs text-gray uppercase tracking-wider">Last Name</p>
+                    <p className="font-body text-base text-navy mt-1">{state.lastName}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="font-body text-xs text-gray uppercase tracking-wider">Phone</p>
                     <p className="font-body text-base text-navy mt-1">{state.phone}</p>
                   </div>
-                </div>
-                {state.email && (
                   <div>
                     <p className="font-body text-xs text-gray uppercase tracking-wider">Email</p>
                     <p className="font-body text-base text-navy mt-1">{state.email}</p>
                   </div>
-                )}
+                </div>
                 {state.notes && (
                   <div>
                     <p className="font-body text-xs text-gray uppercase tracking-wider">Notes</p>
