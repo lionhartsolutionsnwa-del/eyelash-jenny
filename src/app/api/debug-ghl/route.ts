@@ -25,10 +25,15 @@ export async function GET() {
       tags: ['debug'],
       source: 'website',
       customFields: [
-        { id: process.env.GHL_FIELD_ID_DATE, field_value: '2026-04-10' },
-        { id: process.env.GHL_FIELD_ID_TIME, field_value: '10:00' },
-        { id: process.env.GHL_FIELD_ID_SERVICE, field_value: 'Classic Lashes' },
+        { id: process.env.GHL_FIELD_ID_DATE?.trim(), field_value: '2026-04-10' },
+        { id: process.env.GHL_FIELD_ID_TIME?.trim(), field_value: '10:00' },
+        { id: process.env.GHL_FIELD_ID_SERVICE?.trim(), field_value: 'Classic Lashes' },
       ],
+      fieldIdSuffixes: {
+        date: process.env.GHL_FIELD_ID_DATE?.slice(-4),
+        time: process.env.GHL_FIELD_ID_TIME?.slice(-4),
+        service: process.env.GHL_FIELD_ID_SERVICE?.slice(-4),
+      },
     }),
   });
   const createBody = await createRes.text();
