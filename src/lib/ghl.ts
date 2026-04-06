@@ -5,7 +5,7 @@ const GHL_API_VERSION = '2021-07-28';
 
 function getHeaders() {
   return {
-    Authorization: `Bearer ${process.env.GHL_API_KEY}`,
+    Authorization: `Bearer ${process.env.GHL_API_KEY?.trim()}`,
     Version: GHL_API_VERSION,
     'Content-Type': 'application/json',
   };
