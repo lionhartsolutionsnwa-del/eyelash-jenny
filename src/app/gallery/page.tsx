@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/Button'
 import { GalleryGrid } from './GalleryGrid'
 
 const GALLERY_IMAGES = [
-  { src: 'https://placehold.co/400x500', alt: 'Classic lash set - natural look', aspect: 'portrait' },
-  { src: 'https://placehold.co/500x400', alt: 'Hybrid lash set - textured volume', aspect: 'landscape' },
-  { src: 'https://placehold.co/400x550', alt: 'Volume lash close-up', aspect: 'portrait' },
-  { src: 'https://placehold.co/500x350', alt: 'Before and after classic lashes', aspect: 'landscape' },
-  { src: 'https://placehold.co/400x480', alt: 'Natural lash enhancement', aspect: 'portrait' },
-  { src: 'https://placehold.co/500x400', alt: 'Mega volume set', aspect: 'landscape' },
-  { src: 'https://placehold.co/400x520', alt: 'Wispy hybrid lash set', aspect: 'portrait' },
-  { src: 'https://placehold.co/500x380', alt: 'Cat eye lash mapping', aspect: 'landscape' },
+  { src: '/images/gallery/composite-hybrid.jpg',   alt: 'Hybrid lash extension — before & after',    aspect: 'portrait' },
+  { src: '/images/gallery/composite-classic.jpg',  alt: 'Classic lash extension — before & after',   aspect: 'portrait' },
+  { src: '/images/before-after/after-hybrid.jpg',  alt: 'Stunning hybrid lash result',               aspect: 'landscape' },
+  { src: '/images/gallery/composite-classic2.jpg', alt: 'Classic lash set — two angle views',        aspect: 'portrait' },
+  { src: '/images/gallery/composite-asian.jpg',    alt: 'Volume lash extensions — before & after',   aspect: 'portrait' },
+  { src: '/images/before-after/after-classic.jpg', alt: 'Classic lash close-up after',               aspect: 'landscape' },
+  { src: '/images/gallery/composite-removal.jpg',  alt: 'Natural lash enhancement transformation',   aspect: 'portrait' },
+  { src: '/images/before-after/before-hybrid.jpg', alt: 'Natural lashes before treatment',           aspect: 'landscape' },
 ]
 
 export default function GalleryPage() {

@@ -13,7 +13,7 @@ export function AboutJenny() {
               <div className="absolute -left-3 top-6 bottom-6 w-1 bg-gold rounded-full" />
               <div className="relative overflow-hidden rounded-2xl">
                 <img
-                  src="https://placehold.co/600x800"
+                  src="/images/jenny.jpg"
                   alt="Jenny, professional lash artist"
                   className="w-full h-auto object-cover"
                 />

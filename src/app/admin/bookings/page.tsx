@@ -180,10 +180,10 @@ export default function BookingsPage() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <Card className="p-4">
-        <div className="flex flex-col lg:flex-row gap-3">
+      <Card className="p-3 lg:p-4">
+        <div className="flex flex-col gap-2 lg:gap-3">
           {/* Search */}
-          <div className="flex-1 relative">
+          <div className="relative">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray"
               width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
@@ -200,11 +200,11 @@ export default function BookingsPage() {
             />
           </div>
 
-          {/* Status filter */}
-          <select
+          <div className="flex gap-2">
+            <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="px-3 py-2 text-sm font-body text-navy bg-offwhite rounded-xl border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none cursor-pointer"
+              className="flex-1 px-3 py-2 text-sm font-body text-navy bg-offwhite rounded-xl border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none cursor-pointer"
             >
               {statuses.map((s) => (
                 <option key={s} value={s}>
@@ -216,30 +216,105 @@ export default function BookingsPage() {
                 </option>
               ))}
             </select>
-
-          {/* Service filter */}
-          <select
-            value={serviceFilter}
-            onChange={(e) => { setServiceFilter(e.target.value); setPage(1); }}
-            className="px-3 py-2 text-sm font-body text-navy bg-offwhite rounded-xl border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none cursor-pointer"
-          >
-            {(lang === 'en' ? servicesEn : servicesZh).map((s, i) => (
-              <option key={s} value={servicesEn[i]}>
-                {s}
-              </option>
-            ))}
-          </select>
-          <Button variant="secondary" size="sm" onClick={handleExportCSV}>
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-              <path d="M7 1v9M3.5 6.5L7 10l3.5-3.5M1 12h12" />
-            </svg>
-            <span className="only-en">Export CSV</span><span className="only-zh">导出CSV</span>
-          </Button>
+            <select
+              value={serviceFilter}
+              onChange={(e) => { setServiceFilter(e.target.value); setPage(1); }}
+              className="flex-1 px-3 py-2 text-sm font-body text-navy bg-offwhite rounded-xl border border-gray-light focus:border-gold focus:ring-1 focus:ring-gold/30 outline-none cursor-pointer"
+            >
+              {(lang === 'en' ? servicesEn : servicesZh).map((s, i) => (
+                <option key={s} value={servicesEn[i]}>{s}</option>
+              ))}
+            </select>
+            <button onClick={handleExportCSV} className="hidden lg:flex items-center gap-1.5 px-3 py-2 text-sm font-body text-navy-light bg-offwhite rounded-xl border border-gray-light hover:border-navy-light transition-colors cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
+                <path d="M7 1v9M3.5 6.5L7 10l3.5-3.5M1 12h12" />
+              </svg>
+              <span className="only-en">CSV</span>
+            </button>
+          </div>
         </div>
       </Card>
 
-      {/* Table */}
-      <Card className="overflow-hidden">
+      {/* Mobile: card list */}
+      <div className="lg:hidden space-y-2">
+        {loading ? (
+          <Card className="p-6 text-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-7 h-7 border-2 border-gold border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm text-gray font-body">Loading...</p>
+            </div>
+          </Card>
+        ) : loadError ? (
+          <Card className="p-6 text-center">
+            <p className="text-sm text-rose-500 font-body mb-3">{loadError}</p>
+            <button onClick={loadBookings} className="px-4 py-1.5 text-sm bg-gold text-navy rounded-lg cursor-pointer">Retry</button>
+          </Card>
+        ) : paginated.length === 0 ? (
+          <Card className="p-8 text-center">
+            <p className="text-sm text-gray font-body">No bookings found</p>
+          </Card>
+        ) : paginated.map((booking) => (
+          <Card key={booking.id} className="p-4">
+            <div className="flex items-start justify-between mb-2">
+              <div className="min-w-0 flex-1 mr-3">
+                <p className="font-medium text-navy text-sm truncate">{booking.client}</p>
+                <p className="text-xs text-gray truncate">{booking.phone}</p>
+              </div>
+              <Badge variant={booking.status} size="sm">
+                {booking.status === 'confirmed' ? 'Confirmed' :
+                 booking.status === 'pending' ? 'Pending' :
+                 booking.status === 'cancelled' ? 'Cancelled' : 'Completed'}
+              </Badge>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-navy-light mb-3 flex-wrap">
+              <span className="bg-offwhite px-2 py-0.5 rounded-md">{booking.service}</span>
+              <span className="text-gray">·</span>
+              <span>{booking.date.replace('2026-', '')}</span>
+              <span className="text-gray">·</span>
+              <span>{booking.time}</span>
+              <span className="text-gray">·</span>
+              <span className="font-medium text-navy">${booking.price}</span>
+            </div>
+            <div className="flex items-center gap-2 pt-2 border-t border-gray-light/60">
+              <button
+                onClick={() => setSelectedBooking(booking)}
+                className="flex-1 py-2 text-xs text-navy-light bg-offwhite rounded-lg hover:bg-gray-light transition-colors cursor-pointer font-body"
+              >
+                View Details
+              </button>
+              {booking.status === 'pending' && (
+                <button
+                  onClick={() => updateStatus(booking.id, 'confirmed')}
+                  disabled={updatingId === booking.id}
+                  className="flex-1 py-2 text-xs text-emerald-700 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-colors cursor-pointer font-body disabled:opacity-50"
+                >
+                  Confirm
+                </button>
+              )}
+              {(booking.status === 'pending' || booking.status === 'confirmed') && (
+                <button
+                  onClick={() => updateStatus(booking.id, 'cancelled')}
+                  disabled={updatingId === booking.id}
+                  className="flex-1 py-2 text-xs text-rose-600 bg-rose-50 rounded-lg hover:bg-rose-100 transition-colors cursor-pointer font-body disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          </Card>
+        ))}
+        {/* Mobile pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-1 py-2">
+            <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="px-4 py-2 text-sm font-body text-navy-light bg-white rounded-xl border border-gray-light disabled:opacity-40 cursor-pointer">← Prev</button>
+            <span className="text-xs text-gray font-body">{page} / {totalPages}</span>
+            <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="px-4 py-2 text-sm font-body text-navy-light bg-white rounded-xl border border-gray-light disabled:opacity-40 cursor-pointer">Next →</button>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Table */}
+      <Card className="hidden lg:block overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm font-body">
             <thead>

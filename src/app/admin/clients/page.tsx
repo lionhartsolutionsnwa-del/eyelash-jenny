@@ -111,7 +111,7 @@ export default function ClientsPage() {
     <div className="space-y-4">
       {/* Search */}
       <Card className="p-4">
-        <div className="relative max-w-md">
+        <div className="relative w-full max-w-md">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 text-gray"
             width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
@@ -133,8 +133,61 @@ export default function ClientsPage() {
         </div>
       </Card>
 
-      {/* Table */}
-      <Card className="overflow-hidden">
+      {/* Mobile card list */}
+      <div className="lg:hidden space-y-2">
+        {loading ? (
+          <div className="flex flex-col items-center gap-3 py-16 text-gray font-body text-sm">
+            <div className="w-8 h-8 border-3 border-gold border-t-transparent rounded-full animate-spin" />
+            <p>Loading clients...</p>
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center gap-3 py-16 text-gray font-body text-sm">
+            <p className="text-rose-500">Failed to load: {loadError}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-1.5 text-sm bg-gold text-navy rounded-lg hover:bg-gold-dark transition-colors cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        ) : sorted.length === 0 ? (
+          <p className="text-center py-12 text-gray font-body text-sm">
+            <span className="only-en">No clients found.</span>
+            <span className="only-zh">暂无客户记录。</span>
+          </p>
+        ) : (
+          sorted.map((client) => (
+            <Card key={client.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-semibold text-navy text-base leading-tight">{client.name}</p>
+                <span className="shrink-0 text-sm font-semibold text-gold-dark">${client.totalSpent.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm text-navy-light">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M13.4 10.3l-2.1-.3a1 1 0 0 0-.9.3l-1.5 1.5a9.9 9.9 0 0 1-4.7-4.7l1.5-1.5a1 1 0 0 0 .3-.9l-.3-2.1A1 1 0 0 0 4.7 2H3a1 1 0 0 0-1 1.1C2.4 9.3 6.7 13.6 13 14a1 1 0 0 0 1.1-1V11.3a1 1 0 0 0-.7-1z"/></svg>
+                <span>{client.phone}</span>
+              </div>
+              {client.email && (
+                <div className="flex items-center gap-2 text-sm text-navy-light">
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="2" y="4" width="12" height="9" rx="1.5"/><path d="M2 4l6 5 6-5"/></svg>
+                  <span className="truncate">{client.email}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-xs text-gray pt-1 border-t border-gray-light/60">
+                <span><span className="only-en">{client.visits} visit{client.visits !== 1 ? 's' : ''}</span><span className="only-zh">{client.visits} 次</span></span>
+                <span><span className="only-en">Last: </span><span className="only-zh">最近: </span>{client.lastVisit || '—'}</span>
+              </div>
+            </Card>
+          ))
+        )}
+        {!loading && !loadError && (
+          <p className="text-xs text-gray font-body text-center py-2">
+            {sorted.length} client{sorted.length !== 1 ? 's' : ''} total
+          </p>
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <Card className="hidden lg:block overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm font-body">
             <thead>

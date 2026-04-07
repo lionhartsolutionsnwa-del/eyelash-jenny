@@ -20,7 +20,7 @@ interface CalendarBooking {
   date: string; // ISO date
   startHour: number; // e.g. 9.5 = 9:30
   duration: number; // hours
-  status: 'confirmed' | 'pending' | 'completed';
+  status: 'confirmed' | 'pending' | 'completed' | 'cancelled';
   phone: string;
   notes: string;
 }
@@ -70,7 +70,7 @@ function transformBooking(b: SupabaseBooking): CalendarBooking {
     date: b.date,
     startHour: timeToFractionalHour(b.start_time),
     duration: (b.services?.duration_minutes ?? 120) / 60,
-    status: b.status === 'cancelled' ? 'pending' : b.status === 'no_show' ? 'pending' : b.status as 'confirmed' | 'pending' | 'completed',
+    status: b.status === 'no_show' ? 'cancelled' : b.status as 'confirmed' | 'pending' | 'completed' | 'cancelled',
     phone: b.client_phone,
     notes: b.notes ?? '',
   };
@@ -132,6 +132,32 @@ export default function CalendarPage() {
   const [selectedBooking, setSelectedBooking] = useState<CalendarBooking | null>(null);
   const [bookings, setBookings] = useState<CalendarBooking[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+
+  // Default to day view on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setViewMode('day');
+    }
+  }, []);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  async function updateStatus(id: string, newStatus: CalendarBooking['status']) {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error(`Failed: ${res.status}`);
+      setBookings((prev) => prev.map((b) => (b.id === id ? { ...b, status: newStatus } : b)));
+      if (selectedBooking?.id === id) setSelectedBooking({ ...selectedBooking, status: newStatus });
+    } catch (err) {
+      console.error('Status update error:', err);
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   const weekDates = useMemo(() => getWeekDates(currentDate), [currentDate]);
 
@@ -215,36 +241,36 @@ export default function CalendarPage() {
     <div className="space-y-4">
       {/* Controls */}
       <Card className="p-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+        <div className="flex items-center justify-between gap-2">
+          {/* Nav arrows + label */}
+          <div className="flex items-center gap-1">
+            <button onClick={() => navigate(-1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-navy-light hover:bg-offwhite transition-colors cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M10 4l-4 4 4 4" /></svg>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate(0)}>
+            </button>
+            <button onClick={() => navigate(0)} className="px-2 py-1 text-xs font-body font-medium text-navy-light hover:bg-offwhite rounded-lg transition-colors cursor-pointer">
               <span className="only-en">Today</span>
               <span className="only-zh">今天</span>
-            </Button>
-            <Button variant="ghost" size="sm" onClick={() => navigate(1)}>
+            </button>
+            <button onClick={() => navigate(1)} className="w-8 h-8 flex items-center justify-center rounded-lg text-navy-light hover:bg-offwhite transition-colors cursor-pointer">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 4l4 4-4 4" /></svg>
-            </Button>
-            <span className="ml-2 font-body text-sm font-medium text-navy">{headerLabel}</span>
+            </button>
+            <span className="ml-1 font-body text-sm font-medium text-navy truncate max-w-[140px] lg:max-w-none">{headerLabel}</span>
           </div>
 
-          <div className="flex items-center bg-offwhite rounded-lg p-0.5">
+          {/* View switcher */}
+          <div className="flex items-center bg-offwhite rounded-lg p-0.5 shrink-0">
             {(['day', 'week', 'month'] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 className={[
-                  'px-3 py-1.5 text-xs font-body font-medium rounded-md capitalize cursor-pointer',
-                  'transition-opacity duration-150',
-                  'focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-1',
-                  viewMode === mode
-                    ? 'bg-white text-navy shadow-sm'
-                    : 'text-navy-light hover:text-navy',
+                  'px-2 lg:px-3 py-1.5 text-xs font-body font-medium rounded-md capitalize cursor-pointer transition-colors duration-150',
+                  viewMode === mode ? 'bg-white text-navy shadow-sm' : 'text-navy-light hover:text-navy',
                 ].join(' ')}
               >
-                {mode === 'day' ? (<><span className="only-en">Day</span><span className="only-zh">日</span></>) : mode === 'week' ? (<><span className="only-en">Week</span><span className="only-zh">周</span></>) : (<><span className="only-en">Month</span><span className="only-zh">月</span></>)}
+                {mode === 'day' ? (<><span className="only-en">Day</span><span className="only-zh">日</span></>) :
+                 mode === 'week' ? (<><span className="only-en">Week</span><span className="only-zh">周</span></>) :
+                 (<><span className="only-en">Month</span><span className="only-zh">月</span></>)}
               </button>
             ))}
           </div>
@@ -254,8 +280,8 @@ export default function CalendarPage() {
       {/* Calendar Grid */}
       {viewMode !== 'month' ? (
         <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <div className="min-w-[640px]">
+          <div className={viewMode === 'week' ? 'overflow-x-auto' : ''}>
+            <div className={viewMode === 'week' ? 'min-w-[640px]' : ''}>
               {/* Day headers */}
               <div className="grid border-b border-gray-light" style={{ gridTemplateColumns: `64px repeat(${visibleDates.length}, 1fr)` }}>
                 <div className="p-2" />
@@ -292,9 +318,9 @@ export default function CalendarPage() {
                   </div>
                 ))}
 
-                {/* Booking blocks */}
+                {/* Booking blocks — hide cancelled */}
                 {bookings
-                  .filter((b) => visibleDates.includes(b.date))
+                  .filter((b) => visibleDates.includes(b.date) && b.status !== 'cancelled')
                   .map((booking) => {
                     const colIndex = visibleDates.indexOf(booking.date);
                     const top = (booking.startHour - 7) * 60;
@@ -370,6 +396,8 @@ export default function CalendarPage() {
                       <><span className="only-en">Confirmed</span><span className="only-zh">已确认</span></>
                     ) : selectedBooking.status === 'pending' ? (
                       <><span className="only-en">Pending</span><span className="only-zh">待确认</span></>
+                    ) : selectedBooking.status === 'cancelled' ? (
+                      <><span className="only-en">Cancelled</span><span className="only-zh">已取消</span></>
                     ) : (
                       <><span className="only-en">Completed</span><span className="only-zh">已完成</span></>
                     )}
@@ -394,9 +422,45 @@ export default function CalendarPage() {
               </div>
             )}
             <div className="flex gap-2 pt-2">
-              <Button variant="gold" size="sm">Confirm</Button>
-              <Button variant="secondary" size="sm">Reschedule</Button>
-              <Button variant="ghost" size="sm">Cancel</Button>
+              {selectedBooking.status === 'pending' && (
+                <Button
+                  variant="gold"
+                  size="sm"
+                  disabled={updatingId === selectedBooking.id}
+                  onClick={async () => {
+                    await updateStatus(selectedBooking.id, 'confirmed');
+                    setSelectedBooking(null);
+                  }}
+                >
+                  Confirm
+                </Button>
+              )}
+              {selectedBooking.status === 'confirmed' && (
+                <Button
+                  variant="gold"
+                  size="sm"
+                  disabled={updatingId === selectedBooking.id}
+                  onClick={async () => {
+                    await updateStatus(selectedBooking.id, 'completed');
+                    setSelectedBooking(null);
+                  }}
+                >
+                  Mark Completed
+                </Button>
+              )}
+              {(selectedBooking.status === 'pending' || selectedBooking.status === 'confirmed') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={updatingId === selectedBooking.id}
+                  onClick={async () => {
+                    await updateStatus(selectedBooking.id, 'cancelled');
+                    setSelectedBooking(null);
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -437,7 +501,7 @@ function MonthView({
         {cells.map((day, i) => {
           if (day === null) return <div key={i} className="h-20" />;
           const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-          const dayBookings = bookings.filter((b) => b.date === dateStr);
+          const dayBookings = bookings.filter((b) => b.date === dateStr && b.status !== 'cancelled');
           const isToday = dateStr === todayStr;
 
           return (

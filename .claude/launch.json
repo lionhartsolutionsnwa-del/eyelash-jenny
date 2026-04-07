@@ -2,8 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "jenny-lash-dev",
-      "runtimeExecutable": "npm",
+      "name": "eyelash-jenny",
+      "runtimeExecutable": "/Users/jade/.local/node/bin/npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000
     }

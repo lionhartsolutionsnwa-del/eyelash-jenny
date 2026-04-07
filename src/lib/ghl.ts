@@ -116,7 +116,7 @@ export async function upsertContact(input: GHLContactInput): Promise<string | nu
       ...(customFields ? { customFields } : {}),
     }));
 
-    if (create.status !== 201) {
+    if (create.status !== 200 && create.status !== 201) {
       console.error('[GHL] Create failed:', create.status, create.data);
       return null;
     }

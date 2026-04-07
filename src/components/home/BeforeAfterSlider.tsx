@@ -11,18 +11,18 @@ interface SliderPair {
 
 const SLIDERS: SliderPair[] = [
   {
-    before: 'https://placehold.co/800x600/e7e7e7/545E85?text=Before',
-    after: 'https://placehold.co/800x600/101B4B/F6D673?text=After',
+    before: '/images/before-after/before-classic.jpg',
+    after: '/images/before-after/after-classic.jpg',
     label: 'Classic Lashes',
   },
   {
-    before: 'https://placehold.co/800x600/e7e7e7/545E85?text=Before',
-    after: 'https://placehold.co/800x600/101B4B/F6D673?text=After',
+    before: '/images/before-after/before-hybrid.jpg',
+    after: '/images/before-after/after-hybrid.jpg',
     label: 'Hybrid Lashes',
   },
   {
-    before: 'https://placehold.co/800x600/e7e7e7/545E85?text=Before',
-    after: 'https://placehold.co/800x600/101B4B/F6D673?text=After',
+    before: '/images/before-after/before-asian.jpg',
+    after: '/images/before-after/after-asian.jpg',
     label: 'Volume Lashes',
   },
 ];

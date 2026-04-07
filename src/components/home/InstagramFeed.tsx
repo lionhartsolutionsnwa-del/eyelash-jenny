@@ -1,11 +1,14 @@
 import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { Button } from '@/components/ui/Button';
 
-const images = Array.from({ length: 6 }, (_, i) => ({
-  id: i + 1,
-  src: `https://placehold.co/400x400?text=Lash+${i + 1}`,
-  alt: `Lash work sample ${i + 1}`,
-}));
+const images = [
+  { id: 1, src: '/images/gallery/composite-classic.jpg',  alt: 'Classic lash extension before & after' },
+  { id: 2, src: '/images/gallery/composite-hybrid.jpg',   alt: 'Hybrid lash extension before & after' },
+  { id: 3, src: '/images/gallery/composite-asian.jpg',    alt: 'Volume lash extension results' },
+  { id: 4, src: '/images/gallery/composite-classic2.jpg', alt: 'Classic lash set close-up' },
+  { id: 5, src: '/images/gallery/composite-removal.jpg',  alt: 'Natural lash enhancement' },
+  { id: 6, src: '/images/before-after/after-hybrid.jpg',  alt: 'Gorgeous hybrid lash result' },
+];
 
 export function InstagramFeed() {
   return (

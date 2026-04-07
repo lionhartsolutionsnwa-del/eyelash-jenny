@@ -7,9 +7,20 @@ import { Button } from '@/components/ui/Button'
 import { SOCIAL_LINKS } from '@/lib/constants'
 
 const SERVICES: Record<string, { name: string; duration: string; price: number }> = {
-  classic: { name: 'Classic Lashes', duration: '2 hours', price: 119 },
-  hybrid: { name: 'Hybrid Lashes', duration: '2.5 hours', price: 149 },
-  removal: { name: 'Lash Removal', duration: '30 min', price: 25 },
+  // Full Sets
+  'classic':          { name: 'Classic Lashes',     duration: '2 hours',    price: 119 },
+  'hybrid':           { name: 'Hybrid Lashes',      duration: '2.5 hours',  price: 149 },
+  'volume':           { name: 'Volume Lashes',      duration: '2.5 hours',  price: 189 },
+  'mega-volume':      { name: 'Mega Volume Lashes', duration: '3 hours',    price: 239 },
+  'wispy':            { name: 'Wispy Lashes',       duration: '2.5 hours',  price: 169 },
+  // Fills
+  'classic-fill':     { name: 'Classic Fill',       duration: '60 min',     price: 75  },
+  'hybrid-fill':      { name: 'Hybrid Fill',        duration: '75 min',     price: 95  },
+  'volume-fill':      { name: 'Volume Fill',        duration: '75 min',     price: 115 },
+  // Treatments
+  'lash-lift':        { name: 'Lash Lift',          duration: '60 min',     price: 85  },
+  'lash-lift-tint':   { name: 'Lash Lift + Tint',  duration: '75 min',     price: 115 },
+  'lash-removal':     { name: 'Lash Removal',       duration: '30 min',     price: 35  },
 }
 
 function ConfirmationContent() {
