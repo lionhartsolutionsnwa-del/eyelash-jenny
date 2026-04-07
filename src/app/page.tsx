@@ -23,20 +23,6 @@ export default function HomePage() {
         <WhatToExpect />
         <TestimonialsCarousel />
         <InstagramFeed />
-        {/* Book Now CTA strip */}
-        <section className="py-16 bg-navy text-center">
-          <div className="max-w-2xl mx-auto px-6">
-            <h2 className="font-display text-2xl md:text-3xl font-semibold text-white mb-3">
-              Ready for Your Lash Transformation?
-            </h2>
-            <p className="font-body text-white/70 text-base mb-6">
-              Book your appointment in just a few clicks
-            </p>
-            <Button variant="gold" size="lg" href="/book">
-              Book Now
-            </Button>
-          </div>
-        </section>
         <FinalCTA />
       </main>
       <Footer />
