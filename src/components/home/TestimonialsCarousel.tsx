@@ -31,15 +31,15 @@ const testimonials: Testimonial[] = [
   {
     id: 3,
     name: 'Maria T.',
-    service: 'Mega Volume',
+    service: 'Volume Lashes',
     rating: 5,
     quote:
-      'The best lash experience I have ever had. Jenny takes her time to make sure every lash is perfect. My mega volume set is absolutely gorgeous!',
+      'The best lash experience I have ever had. Jenny takes her time to make sure every lash is perfect. My volume set is absolutely gorgeous!',
   },
   {
     id: 4,
     name: 'Ashley P.',
-    service: 'Lash Lift',
+    service: 'Hybrid Lashes',
     rating: 5,
     quote:
       'I love waking up every morning with perfect lashes. Jenny is incredibly talented, gentle, and really listens to what you want. Highly recommend!',

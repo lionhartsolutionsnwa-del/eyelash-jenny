@@ -5,8 +5,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 const notifications = [
   { name: 'Sarah', service: 'Classic Lashes', time: '2 hours ago' },
   { name: 'Michelle', service: 'Volume Set', time: '3 hours ago' },
-  { name: 'Amanda', service: 'Lash Lift', time: '5 hours ago' },
-  { name: 'Jessica', service: 'Mega Volume', time: '6 hours ago' },
+  { name: 'Amanda', service: 'Hybrid Lashes', time: '5 hours ago' },
+  { name: 'Jessica', service: 'Volume Lashes', time: '6 hours ago' },
   { name: 'Emily', service: 'Classic Fill', time: '8 hours ago' },
   { name: 'Nicole', service: 'Volume Fill', time: '1 day ago' },
 ];

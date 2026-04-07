@@ -9,8 +9,9 @@ export const BOOKING_STATUSES: BookingStatus[] = [
 ];
 
 export const SERVICE_DURATIONS: Record<string, number> = {
-  'Classic Lashes': 120,
-  'Hybrid Lashes': 150,
+  'Classic Lashes': 60,
+  'Hybrid Lashes': 80,
+  'Volume Lashes': 100,
   'Lash Removal': 30,
 };
 

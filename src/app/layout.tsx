@@ -19,7 +19,7 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Jenny Professional Eyelash | Premium Lash Extensions",
   description:
-    "Luxury eyelash extension services by Jenny Professional Eyelash. Classic, volume, and mega volume lash sets crafted with precision for a stunning, natural look.",
+    "Luxury eyelash extension services by Jenny Professional Eyelash. Classic, hybrid, and volume lash sets crafted with precision for a stunning, natural look.",
 };
 
 export default function RootLayout({
@@ -41,7 +41,7 @@ export default function RootLayout({
               "@type": "LocalBusiness",
               name: "Jenny Professional Eyelash",
               description:
-                "Premium eyelash extension services including classic, volume, and mega volume lash sets.",
+                "Premium eyelash extension services including classic, hybrid, and volume lash sets.",
               image: "https://placehold.co/1200x630",
               "@id": "",
               url: "",
