@@ -6,6 +6,8 @@ const QUICK_LINKS = [
   { label: 'Services', href: '#services' },
   { label: 'Gallery', href: '#gallery' },
   { label: 'Book Now', href: '/booking' },
+  { label: 'Privacy Policy', href: '/privacy-policy' },
+  { label: 'Terms of Service', href: '/terms' },
 ];
 
 function Footer() {
