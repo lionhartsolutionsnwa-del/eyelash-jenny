@@ -562,56 +562,69 @@ function BookingWizardInner() {
                 </label>
               </div>
 
-              {/* Consent */}
-              <div className="flex flex-col gap-3 pt-1">
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={state.smsReminders}
-                    onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsReminders' })}
-                    className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
-                  />
-                  <span className="font-body text-sm text-navy leading-snug">
-                    I agree to receive appointment reminders and confirmations via SMS.{' '}
-                    <span className="text-red-500">*</span>
-                  </span>
-                </label>
-                {state.errors.smsReminders && (
-                  <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.smsReminders}</p>
-                )}
+                {/* SMS Consent */}
+                <div className="rounded-xl bg-navy/5 p-4 space-y-3">
+                  <p className="font-display text-sm font-semibold text-navy">
+                    SMS Notifications from Jenny Professional Eyelash
+                  </p>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={state.smsReminders}
+                      onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsReminders' })}
+                      className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                    />
+                    <span className="font-body text-sm text-navy leading-snug">
+                      I agree to receive appointment reminders and confirmations via SMS from Jenny Professional Eyelash.{' '}
+                      <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  {state.errors.smsReminders && (
+                    <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.smsReminders}</p>
+                  )}
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={state.emailConsent}
-                    onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'emailConsent' })}
-                    className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
-                  />
-                  <span className="font-body text-sm text-navy leading-snug">
-                    I agree to receive booking confirmations and updates via email.{' '}
-                    <span className="text-red-500">*</span>
-                  </span>
-                </label>
-                {state.errors.emailConsent && (
-                  <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.emailConsent}</p>
-                )}
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={state.emailConsent}
+                      onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'emailConsent' })}
+                      className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                    />
+                    <span className="font-body text-sm text-navy leading-snug">
+                      I agree to receive booking confirmations and updates via email.{' '}
+                      <span className="text-red-500">*</span>
+                    </span>
+                  </label>
+                  {state.errors.emailConsent && (
+                    <p className="font-body text-xs text-red-500 -mt-1 ml-7">{state.errors.emailConsent}</p>
+                  )}
 
-                <label className="flex items-start gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={state.smsMarketing}
-                    onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsMarketing' })}
-                    className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
-                  />
-                  <span className="font-body text-sm text-navy-light leading-snug">
-                    I'd also like to receive exclusive offers and promotions via SMS. (optional)
-                  </span>
-                </label>
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={state.smsMarketing}
+                      onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsMarketing' })}
+                      className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                    />
+                    <span className="font-body text-sm text-navy-light leading-snug">
+                      I'd also like to receive exclusive offers and promotions via SMS. (optional)
+                    </span>
+                  </label>
 
-                <p className="font-body text-xs text-gray ml-7">
-                  Message & data rates may apply. Reply STOP to opt out at any time.
-                </p>
-              </div>
+                  <div className="space-y-1 pt-1 border-t border-navy/10">
+                    <p className="font-body text-xs text-gray ml-7">
+                      Message frequency varies. Standard msg rates apply.
+                    </p>
+                    <p className="font-body text-xs text-gray ml-7">
+                      Reply STOP to opt out at any time. Text HELP for assistance.
+                    </p>
+                    <p className="font-body text-xs text-gray ml-7">
+                      <a href="/privacy-policy" className="underline hover:text-navy transition-colors">Privacy Policy</a>
+                      {' '}·{' '}
+                      <a href="/terms" className="underline hover:text-navy transition-colors">Terms of Service</a>
+                    </p>
+                  </div>
+                </div>
             </div>
           </div>
         )}
