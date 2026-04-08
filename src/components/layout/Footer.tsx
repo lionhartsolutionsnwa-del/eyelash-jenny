@@ -5,7 +5,7 @@ const QUICK_LINKS = [
   { label: 'Home', href: '/' },
   { label: 'Services', href: '#services' },
   { label: 'Gallery', href: '#gallery' },
-  { label: 'Book Now', href: '/book' },
+  { label: 'Book Now', href: '/booking' },
 ];
 
 function Footer() {
