@@ -37,6 +37,9 @@ export default function TermsPage() {
               <p className="font-body text-navy-light leading-relaxed mt-3">
                 We reserve the right to modify these terms at any time. Continued use of our website after any changes constitutes acceptance of the updated terms.
               </p>
+              <p className="font-body text-navy-light leading-relaxed mt-3">
+                <strong>Age Requirement:</strong> You must be at least 18 years of age to use our website and book services. By booking an appointment, you confirm that you are 18 years of age or older.
+              </p>
             </div>
 
             {/* Section 2 */}
@@ -95,6 +98,9 @@ export default function TermsPage() {
               <p className="font-body text-navy-light leading-relaxed mt-3">
                 Your SMS consent is collected solely for communication from Jenny Professional Eyelash and may only be shared with our SMS service provider(s) to deliver messages to you.
               </p>
+              <p className="font-body text-navy-light leading-relaxed mt-3">
+                <strong>Mobile Carrier Liability:</strong> Jenny Professional Eyelash is not responsible for delays or failures in message delivery caused by mobile network operators, cellular service providers, or other third-party carriers. Message delivery is dependent on the availability and functionality of the recipient's mobile device and service plan.
+              </p>
             </div>
 
             {/* Section 5 */}
@@ -110,6 +116,9 @@ export default function TermsPage() {
               </p>
               <p className="font-body text-navy-light leading-relaxed mt-3">
                 You agree to indemnify and hold harmless Jenny Professional Eyelash from any claims, damages, or expenses arising from your violation of these Terms or your misuse of our services.
+              </p>
+              <p className="font-body text-navy-light leading-relaxed mt-3">
+                <strong>Mobile Carrier Liability:</strong> Jenny Professional Eyelash is not responsible for delays or failures in message delivery caused by mobile network operators, cellular service providers, or other third-party carriers. Message delivery is dependent on the availability and functionality of the recipient's mobile device and service plan.
               </p>
             </div>
 

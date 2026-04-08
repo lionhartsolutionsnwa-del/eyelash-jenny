@@ -33,6 +33,22 @@ export default function PrivacyPolicyPage() {
               <p className="font-body text-navy-light leading-relaxed mt-3">
                 We also collect usage data automatically when you visit our website, including your IP address, browser type, pages visited, and other diagnostic data, to improve the functionality of our site.
               </p>
+
+              {/* Cookies & Tracking */}
+              <div className="border-b border-navy/10 pb-4 mt-4">
+                <h3 className="font-display text-base font-semibold text-navy mb-2">Cookies & Tracking</h3>
+                <p className="font-body text-sm text-navy-light leading-relaxed">
+                  We use cookies and similar tracking technologies to improve your browsing experience and understand how you interact with our website. Cookies are small text files stored on your device. We may use session cookies (which expire when you close your browser) and persistent cookies (which remain on your device until you delete them). You can control cookie preferences through your browser settings.
+                </p>
+              </div>
+
+              {/* Data Security */}
+              <div className="border-b border-navy/10 pb-4 mt-4">
+                <h3 className="font-display text-base font-semibold text-navy mb-2">Data Security</h3>
+                <p className="font-body text-sm text-navy-light leading-relaxed">
+                  We take reasonable measures to protect your personal information from unauthorized access, disclosure, or destruction. This includes secure data transmission (HTTPS), restricted access to personal data, and regular review of our security practices. While we strive to protect your information, no method of transmission over the internet is 100% secure.
+                </p>
+              </div>
             </div>
 
             {/* Section 2 */}
