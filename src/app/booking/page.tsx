@@ -343,7 +343,6 @@ function BookingWizardInner() {
           state.lastName.trim().length >= 1 &&
           state.phone.replace(/\D/g, '').length >= 10 &&
           state.email.includes('@') &&
-          state.smsReminders &&
           state.emailConsent
         )
       default:
@@ -559,7 +558,50 @@ function BookingWizardInner() {
                 </label>
               </div>
 
-                {/* Email Consent Only */}
+                {/* SMS Reminders (Optional) */}
+                <div className="rounded-xl bg-navy/5 p-4 space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={state.smsReminders}
+                      onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsReminders' })}
+                      className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                    />
+                    <span className="font-body text-sm text-navy leading-snug">
+                      I agree to receive appointment reminders and confirmations via SMS from Jenny Professional Eyelash.
+                    </span>
+                  </label>
+                  <div className="space-y-1 pt-1 border-t border-navy/10 ml-7">
+                    <p className="font-body text-xs text-gray">
+                      Message frequency varies. Standard msg rates apply.
+                    </p>
+                    <p className="font-body text-xs text-gray">
+                      Reply STOP to opt out at any time. Text HELP for assistance.
+                    </p>
+                    <p className="font-body text-xs text-gray">
+                      <a href="/privacy-policy" className="underline hover:text-navy transition-colors">Privacy Policy</a>
+                      {' '}·{' '}
+                      <a href="/terms" className="underline hover:text-navy transition-colors">Terms of Service</a>
+                    </p>
+                  </div>
+                </div>
+
+                {/* SMS Marketing (Optional) */}
+                <div className="rounded-xl bg-navy/5 p-4 space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={state.smsMarketing}
+                      onChange={() => dispatch({ type: 'TOGGLE_BOOL', field: 'smsMarketing' })}
+                      className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
+                    />
+                    <span className="font-body text-sm text-navy leading-snug">
+                      I'd also like to receive exclusive offers and promotions via SMS. (optional)
+                    </span>
+                  </label>
+                </div>
+
+                {/* Email Consent (Required) */}
                 <div className="rounded-xl bg-navy/5 p-4 space-y-3">
                   <label className="flex items-start gap-3 cursor-pointer">
                     <input

@@ -143,6 +143,19 @@ function ConfirmationContent() {
         </div>
       </Card>
 
+      {/* SMS Disclosure */}
+      <div className="mt-8 rounded-xl bg-navy/5 p-5 text-left">
+        <p className="font-display text-sm font-semibold text-navy mb-2">
+          SMS Notifications from Jenny Professional Eyelash
+        </p>
+        <p className="font-body text-xs text-navy-light leading-relaxed">
+          By providing your phone number, you consent to receive appointment reminders and confirmations via SMS from Jenny Professional Eyelash. Message frequency varies. Standard msg rates apply. Reply STOP to opt out at any time. Text HELP for assistance. For full details, see our{' '}
+          <a href="/privacy-policy" className="underline hover:text-navy transition-colors">Privacy Policy</a>
+          {' '}and{' '}
+          <a href="/terms" className="underline hover:text-navy transition-colors">Terms of Service</a>.
+        </p>
+      </div>
+
       {/* What to Prepare */}
       <div className="mt-10 text-left">
         <h2 className="font-display text-xl font-semibold text-navy mb-4">What to Prepare</h2>
