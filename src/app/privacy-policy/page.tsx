@@ -122,7 +122,7 @@ export default function PrivacyPolicyPage() {
                   Phone: <a href="tel:4793297979" className="text-gold-dark hover:text-navy transition-colors">479-329-7979</a>
                 </p>
                 <p className="font-body text-sm text-navy-light mt-1">
-                  Email: <a href="mailto:info@jennyprofessionallash.com" className="text-gold-dark hover:text-navy transition-colors">info@jennyprofessionallash.com</a>
+                  Email: <a href="mailto:eyelashjenny2026@gmail.com" className="text-gold-dark hover:text-navy transition-colors">eyelashjenny2026@gmail.com</a>
                 </p>
               </div>
             </div>

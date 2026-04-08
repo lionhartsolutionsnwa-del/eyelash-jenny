@@ -86,7 +86,7 @@ export default function TermsPage() {
                 <strong>Opt-Out:</strong> You may opt out of SMS communications at any time by replying STOP to any message you receive. You will receive a confirmation reply confirming your opt-out, after which no further SMS messages will be sent.
               </p>
               <p className="font-body text-navy-light leading-relaxed mt-3">
-                <strong>Help:</strong> For assistance, reply HELP to any SMS message you receive, or contact us directly at 479-329-7979 or via email at info@jennyprofessionallash.com.
+                <strong>Help:</strong> For assistance, reply HELP to any SMS message you receive, or contact us directly at 479-329-7979 or via email at eyelashjenny2026@gmail.com.
               </p>
               <p className="font-body text-navy-light leading-relaxed mt-3">
                 For full details on how we handle your personal information, including SMS data, please review our{' '}
@@ -140,7 +140,7 @@ export default function TermsPage() {
                   Phone: <a href="tel:4793297979" className="text-gold-dark hover:text-navy transition-colors">479-329-7979</a>
                 </p>
                 <p className="font-body text-sm text-navy-light mt-1">
-                  Email: <a href="mailto:info@jennyprofessionallash.com" className="text-gold-dark hover:text-navy transition-colors">info@jennyprofessionallash.com</a>
+                  Email: <a href="mailto:eyelashjenny2026@gmail.com" className="text-gold-dark hover:text-navy transition-colors">eyelashjenny2026@gmail.com</a>
                 </p>
               </div>
             </div>

@@ -144,10 +144,10 @@ function Footer() {
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                   </svg>
                   <a
-                    href="mailto:info@jennyprofessionallash.com"
+                    href="mailto:eyelashjenny2026@gmail.com"
                     className="hover:text-gold transition-colors"
                   >
-                    info@jennyprofessionallash.com
+                    eyelashjenny2026@gmail.com
                   </a>
                 </li>
                 <li className="flex items-start gap-2">
