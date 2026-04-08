@@ -573,7 +573,7 @@ function BookingWizardInner() {
                   </label>
                   <div className="space-y-1 pt-1 border-t border-navy/10 ml-7">
                     <p className="font-body text-xs text-gray">
-                      Message frequency varies. Standard msg rates apply.
+                      Message frequency may vary. Message & data rates may apply.
                     </p>
                     <p className="font-body text-xs text-gray">
                       Reply STOP to opt out at any time. Text HELP for assistance.
@@ -596,9 +596,22 @@ function BookingWizardInner() {
                       className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
                     />
                     <span className="font-body text-sm text-navy leading-snug">
-                      I'd also like to receive exclusive offers and promotions via SMS. (optional)
+                      I'd also like to receive exclusive offers and promotions via SMS from Jenny Professional Eyelash. (optional)
                     </span>
                   </label>
+                  <div className="space-y-1 pt-1 border-t border-navy/10 ml-7">
+                    <p className="font-body text-xs text-gray">
+                      Message frequency may vary. Message & data rates may apply.
+                    </p>
+                    <p className="font-body text-xs text-gray">
+                      Reply STOP to opt out at any time. Text HELP for assistance.
+                    </p>
+                    <p className="font-body text-xs text-gray">
+                      <a href="/privacy-policy" className="underline hover:text-navy transition-colors">Privacy Policy</a>
+                      {' '}·{' '}
+                      <a href="/terms" className="underline hover:text-navy transition-colors">Terms of Service</a>
+                    </p>
+                  </div>
                 </div>
 
                 {/* Email Consent (Required) */}

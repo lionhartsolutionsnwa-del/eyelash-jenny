@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
                 <strong>Help:</strong> If you need assistance, you can text HELP to the same number you receive messages from, or contact us directly at the phone number or email address listed in this policy.
               </p>
               <p className="font-body text-navy-light leading-relaxed mt-3">
-                We will never share your phone number with third parties for their marketing purposes without your explicit consent.
+                We will never share your phone number with third parties for their marketing purposes without your explicit consent. Your SMS consent is collected solely for communication from Jenny Professional Eyelash and may only be shared with our SMS service provider(s) to deliver messages to you.
               </p>
             </div>
 

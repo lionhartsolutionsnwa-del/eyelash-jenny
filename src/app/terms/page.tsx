@@ -92,6 +92,9 @@ export default function TermsPage() {
                 </a>
                 .
               </p>
+              <p className="font-body text-navy-light leading-relaxed mt-3">
+                Your SMS consent is collected solely for communication from Jenny Professional Eyelash and may only be shared with our SMS service provider(s) to deliver messages to you.
+              </p>
             </div>
 
             {/* Section 5 */}
