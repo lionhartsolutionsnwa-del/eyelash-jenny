@@ -20,7 +20,6 @@ interface FormState {
   email: string
   serviceIds: string[]
   notes: string
-  smsConsent: boolean
 }
 
 interface FormErrors {
@@ -88,7 +87,7 @@ export default function BookPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [servicesLoading, setServicesLoading] = useState(true);
 
-  const [form, setForm] = useState<FormState>({ name: '', phone: '', email: '', serviceIds: [], notes: '', smsConsent: false });
+  const [form, setForm] = useState<FormState>({ name: '', phone: '', email: '', serviceIds: [], notes: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -596,37 +595,6 @@ export default function BookPage() {
                       <label className="pointer-events-none absolute left-4 top-1.5 text-xs text-navy-light font-body">
                         {lang === 'en' ? 'Notes (optional)' : '备注（选填）'}
                       </label>
-                    </div>
-
-                    {/* SMS Consent */}
-                    <div className="rounded-xl bg-navy/5 p-4 space-y-3">
-                      <p className="font-display text-sm font-semibold text-navy">
-                        SMS Notifications from Jenny Professional Eyelash
-                      </p>
-                      <label className="flex items-start gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={form.smsConsent}
-                          onChange={(e) => setForm((prev) => ({ ...prev, smsConsent: e.target.checked }))}
-                          className="mt-0.5 shrink-0 w-4 h-4 accent-gold cursor-pointer"
-                        />
-                        <span className="font-body text-sm text-navy leading-snug">
-                          I agree to receive appointment reminders and confirmations via SMS from Jenny Professional Eyelash. (optional)
-                        </span>
-                      </label>
-                      <div className="space-y-1 pt-1 border-t border-navy/10">
-                        <p className="font-body text-xs text-gray ml-7">
-                          Message frequency varies. Standard msg rates apply.
-                        </p>
-                        <p className="font-body text-xs text-gray ml-7">
-                          Reply STOP to opt out at any time. Text HELP for assistance.
-                        </p>
-                        <p className="font-body text-xs text-gray ml-7">
-                          <a href="/privacy-policy" className="underline hover:text-navy transition-colors">Privacy Policy</a>
-                          {' '}·{' '}
-                          <a href="/terms" className="underline hover:text-navy transition-colors">Terms of Service</a>
-                        </p>
-                      </div>
                     </div>
 
                     {/* Submit error */}

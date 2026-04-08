@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, DM_Sans } from "next/font/google";
+import { GHLChatWidget } from "@/components/shared/GHLChatWidget";
 import "./globals.css";
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -78,6 +79,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-offwhite text-navy font-body">
         {children}
+        <GHLChatWidget />
       </body>
     </html>
   );
