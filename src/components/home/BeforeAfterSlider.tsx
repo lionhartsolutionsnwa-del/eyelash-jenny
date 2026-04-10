@@ -11,19 +11,19 @@ interface SliderPair {
 
 const SLIDERS: SliderPair[] = [
   {
-    before: '/images/before-after/before-classic.jpg',
-    after: '/images/before-after/after-classic.jpg',
-    label: 'Classic Lashes',
+    before: '/images/before-after/before-jenny.jpg',
+    after: '/images/before-after/after-jenny.jpg',
+    label: 'Jenny',
   },
   {
-    before: '/images/before-after/before-hybrid.jpg',
-    after: '/images/before-after/after-hybrid.jpg',
-    label: 'Hybrid Lashes',
+    before: '/images/before-after/before-halley.jpg',
+    after: '/images/before-after/after-halley.jpg',
+    label: 'Halley',
   },
   {
-    before: '/images/before-after/before-asian.jpg',
-    after: '/images/before-after/after-asian.jpg',
-    label: 'Volume Lashes',
+    before: '/images/before-after/before-halley2.jpg',
+    after: '/images/before-after/after-halley.jpg',
+    label: 'Halley',
   },
 ];
 
