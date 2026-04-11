@@ -21,6 +21,7 @@ interface Service {
   duration_minutes: number
   description: string | null
   popular?: boolean
+  is_addon?: boolean
 }
 
 interface TimeSlot {
@@ -31,6 +32,7 @@ interface TimeSlot {
 interface WizardState {
   step: number
   service: Service | null
+  addonService: Service | null
   date: Date | null
   time: string
   firstName: string
@@ -49,6 +51,7 @@ interface WizardState {
 
 type WizardAction =
   | { type: 'SET_SERVICE'; payload: Service }
+  | { type: 'SET_ADDON'; payload: Service | null }
   | { type: 'SET_DATE'; payload: Date }
   | { type: 'SET_TIME'; payload: string }
   | { type: 'SET_FIELD'; field: string; value: string }
@@ -65,7 +68,9 @@ type WizardAction =
 function reducer(state: WizardState, action: WizardAction): WizardState {
   switch (action.type) {
     case 'SET_SERVICE':
-      return { ...state, service: action.payload, time: '' }
+      return { ...state, service: action.payload, addonService: null, time: '' }
+    case 'SET_ADDON':
+      return { ...state, addonService: action.payload }
     case 'SET_DATE':
       return { ...state, date: action.payload, time: '' }
     case 'SET_TIME':
@@ -162,11 +167,13 @@ function BookingWizardInner() {
   const preselected = searchParams.get('service') || ''
 
   const [services, setServices] = useState<Service[]>([])
+  const [addonService, setAddonService] = useState<Service | null>(null)
   const [slots, setSlots] = useState<TimeSlot[]>([])
 
   const [state, dispatch] = useReducer(reducer, {
     step: 0,
     service: null,
+    addonService: null,
     date: null,
     time: '',
     firstName: '',
@@ -198,6 +205,10 @@ function BookingWizardInner() {
         if (error) throw error
         const loaded = (data || []) as Service[]
         setServices(loaded)
+
+        // Find the Add 20 Lash Extensions addon
+        const addon = (data || []).find((s: Service) => s.name === 'Add 20 Lash Extensions') as Service | undefined
+        if (addon) setAddonService(addon)
 
         // Pre-select if service param was passed
         if (preselected) {
@@ -240,8 +251,9 @@ function BookingWizardInner() {
       dispatch({ type: 'SET_SLOTS_LOADING', payload: true })
       try {
         const dateStr = formatDateISO(state.date)
+        const totalDuration = state.service.duration_minutes + (state.addonService?.duration_minutes ?? 0)
         const response = await fetch(
-          `/api/availability/slots?date=${dateStr}&service_id=${state.service!.id}`
+          `/api/availability/slots?date=${dateStr}&service_id=${state.service!.id}&duration=${totalDuration}`
         )
         const data = await response.json()
         setSlots(data.slots || [])
@@ -253,7 +265,7 @@ function BookingWizardInner() {
       }
     }
     loadSlots()
-  }, [state.date, state.service])
+  }, [state.date, state.service, state.addonService])
 
   const handleNext = useCallback(() => {
     if (state.step === 2) {
@@ -298,7 +310,14 @@ function BookingWizardInner() {
         sms_marketing_consent: state.smsMarketing,
       }
       if (state.email.trim()) payload.client_email = state.email.trim()
-      if (state.notes.trim()) payload.notes = state.notes.trim()
+
+      // Build notes: include addon if selected
+      const notesParts: string[] = []
+      if (state.addonService) {
+        notesParts.push(`Addon: ${state.addonService.name} (+$${state.addonService.price}, +${state.addonService.duration_minutes} min)`)
+      }
+      if (state.notes.trim()) notesParts.push(state.notes.trim())
+      if (notesParts.length > 0) payload.notes = notesParts.join(' | ')
 
       const response = await fetch('/api/bookings', {
         method: 'POST',
@@ -452,6 +471,49 @@ function BookingWizardInner() {
                     </button>
                   )
                 })}
+
+                {/* Add 20 Lash Extensions Addon — shown after a service is selected (except removal) */}
+                {state.service && state.service.name !== 'Lash Extension Removal' && addonService && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      dispatch({
+                        type: 'SET_ADDON',
+                        payload: state.addonService?.id === addonService.id ? null : addonService,
+                      })
+                    }
+                    className={[
+                      'relative flex items-start gap-4 w-full text-left rounded-2xl p-5 border-2 transition-[border-color,box-shadow] duration-200 cursor-pointer',
+                      state.addonService?.id === addonService.id
+                        ? 'border-gold bg-gold/5 shadow-[0_0_0_1px_rgba(246,214,115,0.3)]'
+                        : 'border-gray-light bg-white hover:border-navy-light/30',
+                    ].join(' ')}
+                  >
+                    <span
+                      className={[
+                        'mt-0.5 shrink-0 flex items-center justify-center w-6 h-6 rounded-full border-2 transition-colors duration-200',
+                        state.addonService?.id === addonService.id ? 'border-gold bg-gold' : 'border-gray',
+                      ].join(' ')}
+                    >
+                      {state.addonService?.id === addonService.id && (
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M10 3L4.5 8.5 2 6" stroke="#101B4B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      )}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-display text-lg font-semibold text-navy">+ {addonService.name}</h3>
+                        <Badge variant="new" size="sm">Add-on</Badge>
+                      </div>
+                      <p className="mt-1 font-body text-sm text-navy-light">{addonService.description}</p>
+                      <div className="mt-3 flex items-center gap-4">
+                        <span className="font-display text-xl font-bold text-gold-dark">+${addonService.price}</span>
+                        <span className="font-body text-xs text-gray">+{addonService.duration_minutes} min</span>
+                      </div>
+                    </div>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -654,9 +716,14 @@ function BookingWizardInner() {
                     <p className="font-display text-xl font-semibold text-navy mt-1">
                       {state.service?.name}
                     </p>
+                    {state.addonService && (
+                      <p className="font-body text-sm text-gold-dark mt-0.5">
+                        + {state.addonService.name}
+                      </p>
+                    )}
                   </div>
                   <span className="font-display text-2xl font-bold text-gold-dark">
-                    ${state.service?.price}
+                    ${(state.service?.price ?? 0) + (state.addonService?.price ?? 0)}
                   </span>
                 </div>
 
@@ -678,7 +745,12 @@ function BookingWizardInner() {
                 <div>
                   <p className="font-body text-xs text-gray uppercase tracking-wider">Duration</p>
                   <p className="font-body text-base text-navy mt-1">
-                    {state.service ? formatDuration(state.service.duration_minutes) : ''}
+                    {state.service
+                      ? formatDuration(
+                          state.service.duration_minutes +
+                            (state.addonService?.duration_minutes ?? 0)
+                        )
+                      : ''}
                   </p>
                 </div>
 

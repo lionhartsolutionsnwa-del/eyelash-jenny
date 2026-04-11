@@ -88,6 +88,7 @@ const publicBookingSchema = z.object({
   service_id: z.string().uuid('Please select a service'),
   sms_reminders_consent: z.boolean().refine((v) => v === true, 'You must agree to receive appointment reminders'),
   sms_marketing_consent: z.boolean().optional().default(false),
+  notes: z.string().optional(),
 });
 
 // Helper to strip seconds: "09:00:00" -> "09:00"
@@ -235,7 +236,14 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Service not found or inactive' }, { status: 404 });
   }
 
-  const totalDurationMinutes = svc.duration_minutes ?? 30;
+  let totalDurationMinutes = svc.duration_minutes ?? 30;
+  // Add addon duration if present in notes (format: "Addon: Add 20 Lash Extensions (+$20, +15 min)")
+  if (input.notes) {
+    const addonMatch = input.notes.match(/\+\$(\d+)[^|]*\+\s*(\d+)\s*min/);
+    if (addonMatch) {
+      totalDurationMinutes += parseInt(addonMatch[2], 10);
+    }
+  }
   const endTime = minutesToTime(slotMinutes + totalDurationMinutes);
 
   // 9. Insert booking with status=pending

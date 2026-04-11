@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const date = searchParams.get('date');
   const serviceId = searchParams.get('service_id');
+  const durationOverride = searchParams.get('duration');
 
   if (!date || !serviceId) {
     return Response.json(
@@ -24,19 +25,23 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 1. Look up the service to get duration_minutes
-  const { data: service, error: serviceError } = await getAdminClient()
-    .from('services')
-    .select('duration_minutes')
-    .eq('id', serviceId)
-    .eq('active', true)
-    .single();
+  // 1. Look up the service to get duration_minutes (skip if duration override provided)
+  let serviceDuration = durationOverride ? parseInt(durationOverride, 10) : 0;
+  if (!durationOverride) {
+    const { data: service, error: serviceError } = await getAdminClient()
+      .from('services')
+      .select('duration_minutes')
+      .eq('id', serviceId)
+      .eq('active', true)
+      .single();
 
-  if (serviceError || !service) {
-    return Response.json(
-      { error: 'Service not found or inactive' },
-      { status: 404 }
-    );
+    if (serviceError || !service) {
+      return Response.json(
+        { error: 'Service not found or inactive' },
+        { status: 404 }
+      );
+    }
+    serviceDuration = service.duration_minutes;
   }
 
   // 2. Check if this date is blocked
@@ -100,7 +105,7 @@ export async function GET(request: NextRequest) {
   // 8. Compute available slots
   const slots = computeAvailableSlots({
     date,
-    serviceDurationMinutes: service.duration_minutes,
+    serviceDurationMinutes: serviceDuration,
     availability: {
       start_time: availability.start_time,
       end_time: availability.end_time,
