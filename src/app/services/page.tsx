@@ -6,11 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { FAQAccordion } from './FAQAccordion'
 
 const SERVICES = [
-  // ── Full Sets ─────────────────────────────────────────────────
   {
     id: 'classic',
-    category: 'Full Sets',
-    name: 'Classic Lashes',
+    name: 'Classic (Full Set)',
     tagline: 'Timeless Elegance',
     description:
       'Our Classic Lash set applies one premium synthetic extension to each natural lash, creating a naturally enhanced look that opens up your eyes. Perfect for clients who want subtle definition and a polished everyday appearance without the need for mascara.',
@@ -24,13 +22,12 @@ const SERVICES = [
     comparison:
       'Choose Classic if you prefer a natural, mascara-like finish. For more volume and texture, consider our Hybrid set.',
     price: 119,
-    duration: '1 hr',
+    duration: '90 min',
     slug: 'classic',
   },
   {
     id: 'hybrid',
-    category: 'Full Sets',
-    name: 'Hybrid Lashes',
+    name: 'Hybrid (Full Set)',
     tagline: 'Best of Both Worlds',
     description:
       'Our most requested service blends Classic and Volume techniques for a textured, multidimensional look. Hybrid Lashes combine single extensions with handmade fans to deliver fullness with a natural feel — ideal for clients who want noticeable glamour that still looks effortless.',
@@ -45,58 +42,13 @@ const SERVICES = [
     comparison:
       'Hybrid is the perfect middle ground — more dramatic than Classic but softer than a full Volume set. Most popular with first-time clients.',
     price: 149,
-    duration: '1 hr 20 min',
+    duration: '90 min',
     slug: 'hybrid',
     popular: true,
   },
   {
-    id: 'volume',
-    category: 'Full Sets',
-    name: 'Volume Lashes',
-    tagline: 'Full & Fluffy',
-    description:
-      'Volume Lashes use handmade 3D–6D fans of ultra-fine extensions applied to each natural lash, creating a lush, full look with incredible depth and dimension. Lighter than they look, Volume sets are ideal for clients who want a bold, camera-ready result that lasts.',
-    included: [
-      'Full volume set with 3D–6D handmade fans',
-      'Custom curl, length, and fan-size mapping',
-      'Pre-treatment cleanse and primer',
-      'Comfortable under-eye gel pad protection',
-      'Aftercare kit with cleansing brush',
-      'Complimentary lash bath at pickup',
-    ],
-    comparison:
-      'Volume gives significantly more fullness than Hybrid, with lush handmade fans for a bold, camera-ready result.',
-    price: 189,
-    duration: '1 hr 40 min',
-    slug: 'volume',
-  },
-  {
-    id: 'wispy',
-    category: 'Full Sets',
-    name: 'Wispy Lashes',
-    tagline: 'Textured & Trendy',
-    description:
-      'The Wispy set blends Volume fans with strategically placed longer spike extensions for a spiky, textured finish that is both glamorous and effortlessly undone. This style photographs beautifully and has become one of the most sought-after looks on social media.',
-    included: [
-      'Mixed volume fans and spike extensions',
-      'Custom placement mapping for natural spike pattern',
-      'Pre-treatment cleanse and primer',
-      'Comfortable under-eye gel pad protection',
-      'Aftercare kit with cleansing brush',
-      'Complimentary lash bath at pickup',
-    ],
-    comparison:
-      'Wispy is a great choice if you want the fullness of Volume with a more editorial, textured finish rather than a uniform fluffy look.',
-    price: 169,
-    duration: '2.5 hrs',
-    slug: 'wispy',
-  },
-
-  // ── Fills ──────────────────────────────────────────────────────
-  {
-    id: 'classic-fill',
-    category: 'Fills',
-    name: 'Classic Fill',
+    id: 'classic-refill',
+    name: 'Classic Refill',
     tagline: 'Keep It Fresh',
     description:
       'Maintain your Classic set between appointments. As your natural lashes shed, fills replace lost extensions and repair any sparse areas, restoring your look to its original fullness. Recommended every 2–3 weeks.',
@@ -110,71 +62,26 @@ const SERVICES = [
       'Book within 3 weeks of your last appointment for fill pricing. Sets older than 3 weeks may require a full set.',
     price: 75,
     duration: '60 min',
-    slug: 'classic-fill',
+    slug: 'classic-refill',
   },
-  {
-    id: 'hybrid-fill',
-    category: 'Fills',
-    name: 'Hybrid Fill',
-    tagline: 'Restore the Mix',
-    description:
-      'Keep your Hybrid set looking full and textured with a regular fill. We refresh lost Classic extensions and Volume fans to maintain that signature mixed-texture finish you love.',
-    included: [
-      'Fill of shed Classic extensions and Volume fans',
-      'Removal of any overgrown or tangled extensions',
-      'Pre-treatment cleanse',
-      'Touch-up mapping for symmetry',
-    ],
-    comparison:
-      'Book within 3 weeks of your last appointment for fill pricing. Sets older than 3 weeks may require a full set.',
-    price: 95,
-    duration: '75 min',
-    slug: 'hybrid-fill',
-  },
-  {
-    id: 'volume-fill',
-    category: 'Fills',
-    name: 'Volume Fill',
-    tagline: 'Stay Fluffy',
-    description:
-      'Refresh your Volume set with a targeted fill. We replace shed fans, fix any isolation issues, and restore the full, fluffy appearance of your original set.',
-    included: [
-      'Fill of shed or sparse volume fans',
-      'Removal of twisted or overgrown extensions',
-      'Pre-treatment cleanse',
-      'Re-mapping for even density and symmetry',
-    ],
-    comparison:
-      'Book within 3 weeks for fill pricing. Sets older than 3 weeks may require a full set.',
-    price: 115,
-    duration: '75 min',
-    slug: 'volume-fill',
-  },
-
-  // ── Treatments ─────────────────────────────────────────────────
   {
     id: 'removal',
-    category: 'Treatments',
-    name: 'Lash Removal + New Set',
-    tagline: 'Fresh Start',
+    name: 'Lash Extension Removal',
+    tagline: 'Professional Removal',
     description:
-      'Professional removal of your existing lash extensions followed by a brand-new set. We gently dissolve the old adhesive without damaging your natural lashes, then apply a fresh full set for a seamless transition. Pricing depends on the type of new extensions selected.',
+      'Professional removal of your existing lash extensions. We gently dissolve the adhesive without damaging your natural lashes. Quick and comfortable.',
     included: [
       'Professional-grade cream remover application',
       'Gentle extension dissolution and removal',
       'Natural lash cleanse and conditioning',
-      'Full new set application (style of your choice)',
-      'Aftercare kit with cleansing brush',
     ],
     comparison:
       'We recommend professional removal rather than picking or pulling at extensions, which can damage your natural lashes.',
-    price: '159+',
-    duration: 'varies',
+    price: 35,
+    duration: '20 min',
     slug: 'removal',
   },
 ]
-
-const CATEGORIES = ['Full Sets', 'Fills', 'Treatments']
 
 const FAQ_ITEMS = [
   {
@@ -198,9 +105,9 @@ const FAQ_ITEMS = [
       'We recommend avoiding mascara on your extensions, especially waterproof formulas. Mascara can weaken the adhesive bond and cause premature shedding. The beauty of extensions is that you will not need mascara — your lashes will already look full and defined.',
   },
   {
-    question: 'What is the difference between Classic, Hybrid, and Volume?',
+    question: 'What is the difference between Classic and Hybrid?',
     answer:
-      'Classic uses one extension per natural lash for a natural, defined look. Volume uses handmade fans of multiple ultra-fine extensions per lash for a fuller, fluffier result. Hybrid is a blend of both — you get some volume fans mixed in for texture and density, making it the most versatile choice.',
+      'Classic uses one extension per natural lash for a natural, defined look. Hybrid is a blend of both — you get some volume fans mixed in for texture and density, making it more dramatic than Classic while still looking natural.',
   },
   {
     question: 'How often should I get a fill?',
@@ -279,88 +186,73 @@ export default function ServicesPage() {
           </div>
         </section>
 
-        {/* Services by category */}
+        {/* Services list */}
         <section className="py-20 lg:py-28">
-          <div className="mx-auto max-w-4xl px-6 space-y-20">
-            {CATEGORIES.map((category) => {
-              const items = SERVICES.filter((s) => s.category === category)
-              return (
-                <div key={category}>
-                  {/* Category header */}
-                  <div className="flex items-center gap-4 mb-10">
-                    <h2 className="font-display text-2xl md:text-3xl font-semibold text-navy tracking-tight whitespace-nowrap">
-                      {category}
-                    </h2>
-                    <div className="h-px flex-1 bg-gold/30" />
+          <div className="mx-auto max-w-4xl px-6">
+            {SERVICES.map((service) => (
+              <Card key={service.id} elevated className="p-8 md:p-10 relative overflow-hidden mb-8 last:mb-0">
+                {/* Popular badge */}
+                {service.popular && (
+                  <div className="absolute top-6 right-6">
+                    <Badge variant="popular" size="md">Most Popular</Badge>
                   </div>
+                )}
 
-                  <div className="flex flex-col gap-8">
-                    {items.map((service) => (
-                      <Card key={service.id} elevated className="p-8 md:p-10 relative overflow-hidden">
-                        {/* Popular badge */}
-                        {service.popular && (
-                          <div className="absolute top-6 right-6">
-                            <Badge variant="popular" size="md">Most Popular</Badge>
-                          </div>
-                        )}
+                {/* Header row */}
+                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                  <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy tracking-tight">
+                    {service.name}
+                  </h3>
+                  <span className="font-body text-sm text-navy-light italic">
+                    {service.tagline}
+                  </span>
+                </div>
 
-                        {/* Header row */}
-                        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                          <h3 className="font-display text-2xl md:text-3xl font-semibold text-navy tracking-tight">
-                            {service.name}
-                          </h3>
-                          <span className="font-body text-sm text-navy-light italic">
-                            {service.tagline}
-                          </span>
-                        </div>
+                <p className="mt-4 font-body text-base text-navy-light leading-[1.7]">
+                  {service.description}
+                </p>
 
-                        <p className="mt-4 font-body text-base text-navy-light leading-[1.7]">
-                          {service.description}
-                        </p>
-
-                        {/* What's Included */}
-                        <div className="mt-6">
-                          <h4 className="font-display text-lg font-semibold text-navy mb-3">
-                            What&apos;s Included
-                          </h4>
-                          <ul className="space-y-2">
-                            {service.included.map((item) => (
-                              <li key={item} className="flex items-start gap-3 font-body text-sm text-navy-light leading-relaxed">
-                                <CheckIcon />
-                                {item}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-
-                        {/* Comparison note */}
-                        <p className="mt-5 font-body text-sm text-navy-light/70 italic border-l-2 border-gold/40 pl-4">
-                          {service.comparison}
-                        </p>
-
-                        {/* Price, duration, CTA */}
-                        <div className="mt-8 flex flex-wrap items-center gap-6 border-t border-gray-light pt-6">
-                          <div className="flex items-baseline gap-2">
-                            <span className="font-display text-3xl md:text-4xl font-bold text-gold-dark">
-                              ${service.price}
-                            </span>
-                          </div>
-                          <Badge variant="new" size="md">
-                            <ClockIcon />
-                            {service.duration}
-                          </Badge>
-                          <div className="ml-auto">
-                            <Button variant="gold" size="md" href={`/booking?service=${service.slug}`}>
-                              Book This Service
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
+                {/* What's Included */}
+                <div className="mt-6">
+                  <h4 className="font-display text-lg font-semibold text-navy mb-3">
+                    What&apos;s Included
+                  </h4>
+                  <ul className="space-y-2">
+                    {service.included.map((item) => (
+                      <li key={item} className="flex items-start gap-3 font-body text-sm text-navy-light leading-relaxed">
+                        <CheckIcon />
+                        {item}
+                      </li>
                     ))}
+                  </ul>
+                </div>
+
+                {/* Comparison note */}
+                {service.comparison && (
+                  <p className="mt-5 font-body text-sm text-navy-light/70 italic border-l-2 border-gold/40 pl-4">
+                    {service.comparison}
+                  </p>
+                )}
+
+                {/* Price, duration, CTA */}
+                <div className="mt-8 flex flex-wrap items-center gap-6 border-t border-gray-light pt-6">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-display text-3xl md:text-4xl font-bold text-gold-dark">
+                      ${service.price}
+                    </span>
+                  </div>
+                  <Badge variant="new" size="md">
+                    <ClockIcon />
+                    {service.duration}
+                  </Badge>
+                  <div className="ml-auto">
+                    <Button variant="gold" size="md" href={`/booking?service=${service.slug}`}>
+                      Book This Service
+                    </Button>
                   </div>
                 </div>
-              )
-            })}
+              </Card>
+            ))}
           </div>
         </section>
 
