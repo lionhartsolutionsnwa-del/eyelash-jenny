@@ -12,6 +12,13 @@ const GALLERY_IMAGES = [
   { src: '/images/before-after/after-classic.jpg', alt: 'Classic lash close-up after',               aspect: 'landscape' },
   { src: '/images/gallery/composite-removal.jpg',  alt: 'Natural lash enhancement transformation',   aspect: 'portrait' },
   { src: '/images/before-after/before-hybrid.jpg', alt: 'Natural lashes before treatment',           aspect: 'landscape' },
+  { src: '/images/gallery/after-classic-03.jpg',   alt: 'Classic lash extension — final result',          aspect: 'landscape' },
+  { src: '/images/gallery/after-hybrid-02.jpg',    alt: 'Hybrid lash extension — dramatic volume',       aspect: 'landscape' },
+  { src: '/images/gallery/after-refill-01.jpg',    alt: 'Classic refill — added volume',                 aspect: 'portrait' },
+  { src: '/images/gallery/after-add-01.jpg',       alt: 'Additional lashes for extra drama',              aspect: 'portrait' },
+  { src: '/images/before-after/before-refill-01.jpg', alt: 'Classic refill — before treatment',           aspect: 'landscape' },
+  { src: '/images/before-after/before-removal-01.jpg', alt: 'Lash removal — before treatment',             aspect: 'landscape' },
+  { src: '/images/gallery/after-removal-01.jpg',   alt: 'Lash removal — after treatment',                  aspect: 'landscape' },
 ]
 
 export default function GalleryPage() {
