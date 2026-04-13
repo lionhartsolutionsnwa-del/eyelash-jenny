@@ -472,7 +472,7 @@ function BookingWizardInner() {
                 })}
 
                 {/* Add 20 Lash Extensions Addon — hidden when Add 20 is already booked as a service */}
-                {state.service && state.service.name !== 'Lash Extension Removal' && state.service.name !== 'Add 20 Lash Extensions' && addonService && (
+                {state.service && state.service.name !== 'Add 20 Lash Extensions' && addonService && (
                   <button
                     type="button"
                     onClick={() =>
