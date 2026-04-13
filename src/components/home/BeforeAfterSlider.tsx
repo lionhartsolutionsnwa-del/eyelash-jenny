@@ -10,36 +10,20 @@ interface SliderPair {
 }
 
 const SLIDERS: SliderPair[] = [
-  // New additions
   {
-    before: '/images/before-after/before-classic-01.jpg',
-    after: '/images/gallery/after-classic-01.jpg',
-    label: 'Classic Set',
+    before: '/images/before-after/before-classic.jpg',
+    after: '/images/gallery/after-classic.jpg',
+    label: 'Classic Full Set',
   },
   {
-    before: '/images/before-after/before-hybrid-01.jpg',
-    after: '/images/gallery/after-hybrid-01.jpg',
-    label: 'Hybrid Set',
+    before: '/images/before-after/before-hybrid.jpg',
+    after: '/images/gallery/after-hybrid.jpg',
+    label: 'Hybrid Full Set',
   },
   {
-    before: '/images/before-after/before-classic-02.jpg',
-    after: '/images/gallery/after-classic-02.jpg',
-    label: 'Classic Refill',
-  },
-  {
-    before: '/images/before-after/before-jenny.jpg',
-    after: '/images/before-after/after-jenny.jpg',
-    label: 'Jenny',
-  },
-  {
-    before: '/images/before-after/before-halley.jpg',
-    after: '/images/before-after/after-halley.jpg',
-    label: 'Halley',
-  },
-  {
-    before: '/images/before-after/before-halley2.jpg',
-    after: '/images/before-after/after-halley.jpg',
-    label: 'Halley',
+    before: '/images/before-after/before-volume.jpg',
+    after: '/images/gallery/after-volume.jpg',
+    label: 'Volume Full Set',
   },
 ];
 
