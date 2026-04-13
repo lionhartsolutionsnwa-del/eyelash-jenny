@@ -203,16 +203,16 @@ function BookingWizardInner() {
           .order('sort_order', { ascending: true })
 
         if (error) throw error
-        const loaded = (data || []) as Service[]
-        setServices(loaded)
 
-        // Find the Add 20 Lash Extensions addon
-        const addon = (data || []).find((s: Service) => s.name === 'Add 20 Lash Extensions') as Service | undefined
-        if (addon) setAddonService(addon)
+        // Load all services - Add 20 will appear in list AND be found as addon
+        const allLoaded = (data || []) as Service[]
+        const addonData = allLoaded.find((s: Service) => s.name === 'Add 20 Lash Extensions')
+        if (addonData) setAddonService(addonData)
+        setServices(allLoaded)
 
         // Pre-select if service param was passed
         if (preselected) {
-          const match = loaded.find(
+          const match = allLoaded.find(
             (s) =>
               s.name.toLowerCase().replace(/\s+/g, '-') === preselected ||
               s.id === preselected
@@ -224,17 +224,16 @@ function BookingWizardInner() {
         // Fallback to hardcoded
         setServices([
           // Full Sets
-          { id: 'classic',      name: 'Classic Lashes',          price: 119, duration_minutes: 60,  description: 'One extension per natural lash for a natural, elegant look.' },
-          { id: 'hybrid',       name: 'Hybrid Lashes',           price: 149, duration_minutes: 80,  description: 'Mix of classic and volume for added texture and drama.', popular: true },
-          { id: 'volume',       name: 'Volume Lashes',           price: 189, duration_minutes: 100, description: 'Lush 3D–6D fans for a full, fluffy, camera-ready look.' },
-          { id: 'wispy',        name: 'Wispy Lashes',            price: 169, duration_minutes: 150, description: 'Spiked, textured fans for a trendy editorial finish.' },
+          { id: 'classic-full', name: 'Classic Full Set', price: 119, duration_minutes: 90, description: 'One extension per natural lash for a clean, defined look.', popular: true },
+          { id: 'hybrid-full', name: 'Hybrid Full Set', price: 149, duration_minutes: 90, description: 'Mix of classic and volume fans for added texture and drama.' },
           // Fills
-          { id: 'classic-fill', name: 'Classic Fill',            price: 75,  duration_minutes: 60,  description: 'Refresh your classic set. Best within 2–3 weeks.' },
-          { id: 'hybrid-fill',  name: 'Hybrid Fill',             price: 95,  duration_minutes: 75,  description: 'Refresh your hybrid set. Best within 2–3 weeks.' },
-          { id: 'volume-fill',  name: 'Volume Fill',             price: 115, duration_minutes: 75,  description: 'Refresh your volume set. Best within 2–3 weeks.' },
+          { id: 'classic-refill', name: 'Classic Refill', price: 75, duration_minutes: 60, description: 'Refresh your classic set. Best within 2 weeks.' },
+          // Addons
+          { id: 'addon-20', name: 'Add 20 Lash Extensions', price: 20, duration_minutes: 15, description: 'Add 20 extra lash extensions to your service.' },
           // Treatments
-          { id: 'lash-removal', name: 'Lash Removal + New Set',  price: 159, duration_minutes: 90,  description: 'Gentle removal of existing extensions followed by a fresh new set. Pricing depends on extensions selected.' },
+          { id: 'removal', name: 'Lash Extension Removal', price: 35, duration_minutes: 20, description: 'Safely remove lash extensions without damaging your natural lashes.' },
         ])
+        setAddonService(null)
       } finally {
         dispatch({ type: 'SET_SERVICES_LOADING', payload: false })
       }
@@ -472,8 +471,8 @@ function BookingWizardInner() {
                   )
                 })}
 
-                {/* Add 20 Lash Extensions Addon — shown after a service is selected (except removal) */}
-                {state.service && state.service.name !== 'Lash Extension Removal' && addonService && (
+                {/* Add 20 Lash Extensions Addon — hidden when Add 20 is already booked as a service */}
+                {state.service && state.service.name !== 'Lash Extension Removal' && state.service.name !== 'Add 20 Lash Extensions' && addonService && (
                   <button
                     type="button"
                     onClick={() =>
