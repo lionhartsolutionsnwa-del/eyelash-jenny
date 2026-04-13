@@ -12,17 +12,17 @@ interface SliderPair {
 const SLIDERS: SliderPair[] = [
   {
     before: '/images/before-after/before-classic.jpg',
-    after: '/images/gallery/after-classic.jpg',
+    after: '/images/before-after/after-classic.jpg',
     label: 'Classic Full Set',
   },
   {
     before: '/images/before-after/before-hybrid.jpg',
-    after: '/images/gallery/after-hybrid.jpg',
+    after: '/images/before-after/after-hybrid.jpg',
     label: 'Hybrid Full Set',
   },
   {
     before: '/images/before-after/before-volume.jpg',
-    after: '/images/gallery/after-volume.jpg',
+    after: '/images/before-after/after-volume.jpg',
     label: 'Volume Full Set',
   },
 ];

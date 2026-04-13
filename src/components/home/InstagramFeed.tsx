@@ -2,11 +2,11 @@ import { ScrollReveal } from '@/components/shared/ScrollReveal';
 import { Button } from '@/components/ui/Button';
 
 const images = [
-  { id: 1, src: '/images/gallery/composite-classic.jpg',  alt: 'Classic lash extension before & after' },
-  { id: 2, src: '/images/gallery/composite-hybrid.jpg',   alt: 'Hybrid lash extension before & after' },
-  { id: 3, src: '/images/gallery/composite-asian.jpg',    alt: 'Volume lash extension results' },
-  { id: 4, src: '/images/gallery/composite-classic2.jpg', alt: 'Classic lash set close-up' },
-  { id: 5, src: '/images/gallery/composite-removal.jpg',  alt: 'Natural lash enhancement' },
+  { id: 1, src: '/images/gallery/jenny-gallery-1.jpg',  alt: 'Classic lash extension before & after' },
+  { id: 2, src: '/images/gallery/jenny-gallery-2.jpg',   alt: 'Hybrid lash extension before & after' },
+  { id: 3, src: '/images/before-after/after-classic.jpg',    alt: 'Volume lash extension results' },
+  { id: 4, src: '/images/before-after/after-hybrid.jpg', alt: 'Classic lash set close-up' },
+  { id: 5, src: '/images/before-after/after-volume.jpg',  alt: 'Natural lash enhancement' },
   { id: 6, src: '/images/before-after/after-hybrid.jpg',  alt: 'Gorgeous hybrid lash result' },
 ];
 
