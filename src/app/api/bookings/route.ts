@@ -458,6 +458,7 @@ export async function POST(request: NextRequest) {
         client_phone: managerRecipients,
         manager_phones: managerRecipients,
         customer_phone: customerPhone,
+        client_email: input.client_email?.toLowerCase() || null,
         customer_email: input.client_email?.toLowerCase() || null,
         appointment_time: appointmentTime.toISOString(),
         service_type: serviceDescription,  // Full description incl. addon for n8n SMS
