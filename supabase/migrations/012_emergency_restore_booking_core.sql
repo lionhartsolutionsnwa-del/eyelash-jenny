@@ -1,9 +1,10 @@
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS public.services (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   price NUMERIC(10, 2) NOT NULL,
   duration_minutes INTEGER NOT NULL,
@@ -25,7 +26,7 @@ ALTER TABLE public.services
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE TABLE IF NOT EXISTS public.availability (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   day_of_week INTEGER NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
@@ -43,7 +44,7 @@ ALTER TABLE public.availability
 CREATE UNIQUE INDEX IF NOT EXISTS uq_availability_day_of_week ON public.availability(day_of_week);
 
 CREATE TABLE IF NOT EXISTS public.break_times (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   day_of_week INTEGER NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
@@ -52,7 +53,7 @@ CREATE TABLE IF NOT EXISTS public.break_times (
 );
 
 CREATE TABLE IF NOT EXISTS public.blocked_dates (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   date DATE NOT NULL,
   reason TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS public.blocked_dates (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_blocked_dates_date ON public.blocked_dates(date);
 
 CREATE TABLE IF NOT EXISTS public.bookings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   client_name TEXT NOT NULL,
   client_phone TEXT NOT NULL,
   client_email TEXT,
