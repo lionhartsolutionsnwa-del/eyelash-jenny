@@ -14,10 +14,15 @@ export const bookingSchema = z.object({
       'Please enter a valid phone number'
     ),
   client_email: z.string().email('Invalid email address').optional(),
-  service_id: z.string().uuid('Invalid service ID'),
+  service_id: z.enum(['classic', 'hybrid', 'volume', 'wispy', 'classic-fill', 'hybrid-fill', 'volume-fill', 'lash-removal'], {
+    errorMap: () => ({ message: 'Invalid service selected' }),
+  }),
   date: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format'),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format')
+    .refine((date) => new Date(date) >= new Date(new Date().toDateString()), {
+      message: 'Appointment date must be today or in the future',
+    }),
   start_time: z
     .string()
     .regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Time must be HH:MM or HH:MM:SS format'),

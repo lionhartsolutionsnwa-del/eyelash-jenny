@@ -6,34 +6,73 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { SOCIAL_LINKS } from '@/lib/constants'
 
-const SERVICES: Record<string, { name: string; duration: string; price: number }> = {
-  // Full Sets
-  'classic':          { name: 'Classic Lashes',          duration: '1 hour',       price: 119 },
-  'hybrid':           { name: 'Hybrid Lashes',           duration: '1 hr 20 min',  price: 149 },
-  'volume':           { name: 'Volume Lashes',           duration: '1 hr 40 min',  price: 189 },
-  'wispy':            { name: 'Wispy Lashes',            duration: '2.5 hrs',      price: 169 },
-  // Fills
-  'classic-fill':     { name: 'Classic Fill',            duration: '60 min',       price: 75  },
-  'hybrid-fill':      { name: 'Hybrid Fill',             duration: '75 min',       price: 95  },
-  'volume-fill':      { name: 'Volume Fill',             duration: '75 min',       price: 115 },
-  // Treatments
-  'lash-removal':     { name: 'Lash Removal + New Set',  duration: 'varies',       price: 159 },
+interface BookingData {
+  id: string
+  date: string
+  start_time: string
+  status: string
+  services: { name: string; price: number; duration_minutes?: number }[] | null
+}
+
+interface ServiceInfo {
+  name: string
+  duration: string
+  price: number
 }
 
 function ConfirmationContent() {
   const searchParams = useSearchParams()
   const [showCheck, setShowCheck] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [booking, setBooking] = useState<BookingData | null>(null)
+  const [service, setService] = useState<ServiceInfo>({ name: 'Booking', duration: '', price: 0 })
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const serviceId = searchParams.get('service') || 'classic'
-  const dateStr = searchParams.get('date') || ''
-  const time = searchParams.get('time') || ''
-  const clientName = searchParams.get('name') || ''
-  const phone = searchParams.get('phone') || ''
+  const bookingId = searchParams.get('id')
 
-  const service = SERVICES[serviceId] || SERVICES.classic
+  // Fetch booking details by ID (server-side lookup, no PII in URL)
+  useEffect(() => {
+    if (!bookingId) {
+      setError('No booking ID provided.')
+      setLoading(false)
+      return
+    }
 
-  const dateObj = dateStr ? new Date(dateStr) : new Date()
+    async function fetchBooking() {
+      try {
+        const res = await fetch(`/api/booking/${bookingId}`)
+        if (!res.ok) {
+          const data = await res.json()
+          setError(data.error || 'Booking not found.')
+          setLoading(false)
+          return
+        }
+        const data: BookingData = await res.json()
+        setBooking(data)
+
+        // Map service data to display format
+        const svc = data.services?.[0]
+        if (svc) {
+          const durationMin = svc.duration_minutes ?? 60
+          const h = Math.floor(durationMin / 60)
+          const m = durationMin % 60
+          const durationStr = m > 0 ? `${h} hr ${m} min` : h === 0 ? `${durationMin} min` : `${h} hour${h > 1 ? 's' : ''}`
+          setService({ name: svc.name, duration: durationStr, price: svc.price })
+        }
+        setLoading(false)
+      } catch {
+        setError('Failed to load booking details.')
+        setLoading(false)
+      }
+    }
+    fetchBooking()
+  }, [bookingId])
+
+  // Date formatting
+  const dateStr = booking?.date || ''
+  const time = booking?.start_time || ''
+  const dateObj = dateStr ? new Date(dateStr + 'T00:00:00') : new Date()
   const formattedDate = dateObj.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
@@ -46,7 +85,7 @@ function ConfirmationContent() {
   const calStartStr = calStart.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
   const calEnd = new Date(calStart.getTime() + 2.5 * 60 * 60 * 1000)
   const calEndStr = calEnd.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z'
-  const calUrl = `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${encodeURIComponent(service.name + ' - Jenny Professional Eyelash')}&dates=${calStartStr}/${calEndStr}&details=${encodeURIComponent('Your lash appointment at Jenny Professional Eyelash. Come with clean, makeup-free lashes.')}&location=${encodeURIComponent('456 Lash Blvd, Suite 10, Houston, TX 77001')}`
+  const calUrl = `https://calendar.google.com/calendar/event?action=TEMPLATE&text=${encodeURIComponent(service.name + ' - Jenny Professional Eyelash')}&dates=${calStartStr}/${calEndStr}&details=${encodeURIComponent('Your lash appointment at Jenny Professional Eyelash. Come with clean, makeup-free lashes.')}&location=${encodeURIComponent('5400 S Pinnacle Hills Pkwy, Rogers, AR 72756')}`
 
   useEffect(() => {
     const timer = setTimeout(() => setShowCheck(true), 100)
@@ -57,6 +96,35 @@ function ConfirmationContent() {
     navigator.clipboard.writeText(window.location.origin + '/booking')
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
+        <div className="flex justify-center mb-8">
+          <div className="w-8 h-8 border-3 border-gold border-t-transparent rounded-full animate-spin" />
+        </div>
+        <p className="font-body text-base text-navy-light">Loading your booking...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto max-w-2xl px-6 py-16 text-center">
+        <h1 className="font-display text-3xl md:text-4xl font-semibold text-navy tracking-tight">
+          Booking Not Found
+        </h1>
+        <p className="mt-3 font-body text-base text-navy-light max-w-md mx-auto">
+          {error}
+        </p>
+        <div className="mt-8">
+          <Button variant="gold" size="md" href="/booking">
+            Make a New Booking
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -121,22 +189,14 @@ function ConfirmationContent() {
             </div>
           </div>
 
-          {(clientName || phone) && (
+          {booking?.status && (
             <>
               <div className="h-px bg-gray-light" />
               <div className="grid grid-cols-2 gap-4">
-                {clientName && (
-                  <div>
-                    <p className="font-body text-xs text-gray uppercase tracking-wider">Name</p>
-                    <p className="font-body text-base text-navy mt-1">{clientName}</p>
-                  </div>
-                )}
-                {phone && (
-                  <div>
-                    <p className="font-body text-xs text-gray uppercase tracking-wider">Phone</p>
-                    <p className="font-body text-base text-navy mt-1">{phone}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="font-body text-xs text-gray uppercase tracking-wider">Status</p>
+                  <p className="font-body text-base text-navy mt-1 capitalize">{booking.status}</p>
+                </div>
               </div>
             </>
           )}

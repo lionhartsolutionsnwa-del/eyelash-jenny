@@ -333,16 +333,8 @@ function BookingWizardInner() {
         return
       }
 
-      // Success - redirect to confirmation
-      const params = new URLSearchParams({
-        id: data.id,
-        service: state.service!.name,
-        date: formatDateISO(state.date!),
-        time: state.time,
-        name: `${state.firstName.trim()} ${state.lastName.trim()}`,
-        phone: state.phone,
-      })
-      router.push(`/booking/confirmation?${params.toString()}`)
+      // Success - redirect to confirmation (only pass id, no PII in URL)
+      router.push(`/booking/confirmation?id=${data.id}`)
     } catch (err) {
       console.error('Booking error:', err)
       dispatch({ type: 'SUBMIT_ERROR', payload: 'Network error. Please try again.' })

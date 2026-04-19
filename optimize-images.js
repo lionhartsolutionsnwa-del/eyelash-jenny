@@ -8,11 +8,11 @@ const galleryDir = './public/images/gallery';
 
 const images = [
   { src: 'classic-before.png', dest: 'before-classic.jpg', folder: 'beforeAfter' },
-  { src: 'classic-after.png', dest: 'after-classic.jpg', folder: 'gallery' },
+  { src: 'classic-after.png', dest: 'after-classic.jpg', folder: 'beforeAfter' },
   { src: 'hybrid-before.png', dest: 'before-hybrid.jpg', folder: 'beforeAfter' },
-  { src: 'hybrid-after.png', dest: 'after-hybrid.jpg', folder: 'gallery' },
+  { src: 'hybrid-after.png', dest: 'after-hybrid.jpg', folder: 'beforeAfter' },
   { src: 'volume-before.png', dest: 'before-volume.jpg', folder: 'beforeAfter' },
-  { src: 'volume-after.png', dest: 'after-volume.jpg', folder: 'gallery' },
+  { src: 'volume-after.png', dest: 'after-volume.jpg', folder: 'beforeAfter' },
 ];
 
 async function optimizeImage(img) {

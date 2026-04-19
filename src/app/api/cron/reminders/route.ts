@@ -3,9 +3,16 @@ import { getAdminClient } from '@/lib/supabase/admin';
 import { sendSMS, formatPhone, reminder24hMessage, reminder1hMessage } from '@/lib/twilio';
 
 export async function GET(request: NextRequest) {
+  // Fail-safe: reject all requests if CRON_SECRET is not configured
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error('[CRON] CRON_SECRET environment variable is not configured');
+    return Response.json({ error: 'Server configuration error' }, { status: 401 });
+  }
+
   // Verify cron secret
   const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

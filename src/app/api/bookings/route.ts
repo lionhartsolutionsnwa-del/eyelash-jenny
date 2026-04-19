@@ -85,7 +85,9 @@ const publicBookingSchema = z.object({
   client_email: z.string().email('Invalid email address').optional().or(z.literal('')),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format'),
   start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Time must be HH:MM or HH:MM:SS format'),
-  service_id: z.string().uuid('Please select a service'),
+  service_id: z.enum(['classic', 'hybrid', 'volume', 'wispy', 'classic-fill', 'hybrid-fill', 'volume-fill', 'lash-removal'], {
+    errorMap: () => ({ message: 'Invalid service selected' }),
+  }),
   sms_reminders_consent: z.boolean().refine((v) => v === true, 'You must agree to receive appointment reminders'),
   sms_marketing_consent: z.boolean().optional().default(false),
   notes: z.string().optional(),
@@ -308,6 +310,37 @@ export async function POST(request: NextRequest) {
       console.error('[GHL] Sync error:', err);
       // Never fail the booking if GHL is down
     }
+  }
+
+  // 12. Insert into appointments table for n8n SMS workflow
+  // Build UTC appointment_time from date + start_time
+  const appointmentTime = new Date(`${input.date}T${toHHMM(input.start_time)}:00.000Z`);
+  const serviceSlug = svc.name.toLowerCase().replace(/\s+/g, '-').replace(/lashes$/, '');
+
+  // Build a descriptive service string that includes addon if selected
+  let serviceDescription = svc.name;
+  if (input.notes) {
+    const addonMatch = input.notes.match(/Addon:\s*(.+?)\s*\(\+\$[\d]+\s*,/);
+    if (addonMatch) {
+      serviceDescription = `${svc.name} + ${addonMatch[1].trim()}`;
+    }
+  }
+
+  const { error: apptError } = await supabase
+    .from('appointments')
+    .insert({
+      booking_id: booking.id,  // Use real booking ID for FK relationship
+      client_name: input.client_name.trim(),
+      client_phone: input.client_phone.replace(/\D/g, ''),
+      appointment_time: appointmentTime.toISOString(),
+      service_type: serviceDescription,  // Full description incl. addon for n8n SMS
+    });
+
+  if (apptError) {
+    // Log but don't fail — booking itself succeeded
+    console.error('[BOOKING] appointments insert error:', apptError);
+  } else {
+    console.log('[BOOKING] Inserted into appointments table for n8n SMS workflow');
   }
 
   return Response.json(bookingWithServices ?? booking, { status: 201 });

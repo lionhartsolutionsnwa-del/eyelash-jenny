@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Logo } from '@/components/shared/Logo';
+import { SOCIAL_LINKS } from '@/lib/constants';
 
 const QUICK_LINKS = [
   { label: 'Home', href: '/' },
@@ -42,7 +43,7 @@ function Footer() {
               <div className="flex gap-4 mt-1">
                 {/* Instagram */}
                 <a
-                  href="https://www.instagram.com/eyelashjenny1996?igsh=MjJpdW9zYzVyYzdp&utm_source=qr"
+                  href={SOCIAL_LINKS.instagram}
                   aria-label="Instagram"
                   target="_blank"
                   rel="noopener noreferrer"

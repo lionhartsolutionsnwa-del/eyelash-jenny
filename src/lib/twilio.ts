@@ -8,10 +8,24 @@ function getClient() {
 }
 
 export async function sendSMS(to: string, body: string): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  // Guard: validate all required environment variables before sending
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+  const fromNumber = process.env.TWILIO_FROM_NUMBER;
+
+  if (!accountSid || !authToken || !fromNumber) {
+    const missing = [];
+    if (!accountSid) missing.push('TWILIO_ACCOUNT_SID');
+    if (!authToken) missing.push('TWILIO_AUTH_TOKEN');
+    if (!fromNumber) missing.push('TWILIO_FROM_NUMBER');
+    console.error('[SMS] Missing Twilio configuration:', missing.join(', '));
+    return { success: false, error: `Twilio not configured: missing ${missing.join(', ')}` };
+  }
+
   try {
     const message = await getClient().messages.create({
       body,
-      from: process.env.TWILIO_FROM_NUMBER,
+      from: fromNumber,
       to,
     });
     return { success: true, messageId: message.sid };
