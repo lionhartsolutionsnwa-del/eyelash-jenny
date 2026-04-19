@@ -1,28 +1,15 @@
 -- Restore booking-related schema after accidental table loss.
--- Safe to run on production: uses CREATE/ALTER IF NOT EXISTS and avoids DROP TABLE.
--- Does not modify admin_users or appointments.
+-- Dashboard-safe version: avoids DO $$ blocks.
+-- Non-destructive: does not drop admin_users or appointments.
 
 BEGIN;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'booking_status') THEN
-    CREATE TYPE booking_status AS ENUM (
-      'pending',
-      'confirmed',
-      'cancelled',
-      'completed',
-      'no_show'
-    );
-  END IF;
-END $$;
-
 CREATE TABLE IF NOT EXISTS public.services (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
-  price NUMERIC(10, 2) NOT NULL,
+  price NUMERIC(10,2) NOT NULL,
   duration_minutes INTEGER NOT NULL,
   description TEXT,
   sort_order INTEGER DEFAULT 0,
@@ -33,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.services (
 
 ALTER TABLE public.services
   ADD COLUMN IF NOT EXISTS name TEXT,
-  ADD COLUMN IF NOT EXISTS price NUMERIC(10, 2),
+  ADD COLUMN IF NOT EXISTS price NUMERIC(10,2),
   ADD COLUMN IF NOT EXISTS duration_minutes INTEGER,
   ADD COLUMN IF NOT EXISTS description TEXT,
   ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0,
@@ -41,9 +28,11 @@ ALTER TABLE public.services
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
+CREATE UNIQUE INDEX IF NOT EXISTS uq_services_name ON public.services(name);
+
 CREATE TABLE IF NOT EXISTS public.availability (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+  day_of_week INTEGER NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
@@ -57,22 +46,11 @@ ALTER TABLE public.availability
   ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'unique_day_of_week'
-      AND conrelid = 'public.availability'::regclass
-  ) THEN
-    ALTER TABLE public.availability
-      ADD CONSTRAINT unique_day_of_week UNIQUE (day_of_week);
-  END IF;
-END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_availability_day_of_week ON public.availability(day_of_week);
 
 CREATE TABLE IF NOT EXISTS public.break_times (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  day_of_week INTEGER NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+  day_of_week INTEGER NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
   label TEXT,
@@ -88,7 +66,7 @@ ALTER TABLE public.break_times
 
 CREATE TABLE IF NOT EXISTS public.blocked_dates (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  date DATE NOT NULL UNIQUE,
+  date DATE NOT NULL,
   reason TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -98,29 +76,18 @@ ALTER TABLE public.blocked_dates
   ADD COLUMN IF NOT EXISTS reason TEXT,
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'blocked_dates_date_key'
-      AND conrelid = 'public.blocked_dates'::regclass
-  ) THEN
-    ALTER TABLE public.blocked_dates
-      ADD CONSTRAINT blocked_dates_date_key UNIQUE (date);
-  END IF;
-END $$;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_blocked_dates_date ON public.blocked_dates(date);
 
 CREATE TABLE IF NOT EXISTS public.bookings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   client_name TEXT NOT NULL,
   client_phone TEXT NOT NULL,
   client_email TEXT,
-  service_id UUID NOT NULL REFERENCES public.services(id) ON DELETE RESTRICT,
+  service_id UUID,
   date DATE NOT NULL,
   start_time TIME NOT NULL,
   end_time TIME NOT NULL,
-  status booking_status NOT NULL DEFAULT 'pending',
+  status TEXT NOT NULL DEFAULT 'pending',
   notes TEXT,
   reminder_24h_sent BOOLEAN DEFAULT FALSE,
   reminder_1h_sent BOOLEAN DEFAULT FALSE,
@@ -138,7 +105,7 @@ ALTER TABLE public.bookings
   ADD COLUMN IF NOT EXISTS date DATE,
   ADD COLUMN IF NOT EXISTS start_time TIME,
   ADD COLUMN IF NOT EXISTS end_time TIME,
-  ADD COLUMN IF NOT EXISTS status booking_status DEFAULT 'pending',
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pending',
   ADD COLUMN IF NOT EXISTS notes TEXT,
   ADD COLUMN IF NOT EXISTS reminder_24h_sent BOOLEAN DEFAULT FALSE,
   ADD COLUMN IF NOT EXISTS reminder_1h_sent BOOLEAN DEFAULT FALSE,
@@ -147,24 +114,18 @@ ALTER TABLE public.bookings
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'bookings_service_id_fkey'
-      AND conrelid = 'public.bookings'::regclass
-  ) THEN
-    ALTER TABLE public.bookings
-      ADD CONSTRAINT bookings_service_id_fkey
-      FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE RESTRICT;
-  END IF;
-END $$;
+ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_service_id_fkey;
+ALTER TABLE public.bookings
+  ADD CONSTRAINT bookings_service_id_fkey
+  FOREIGN KEY (service_id) REFERENCES public.services(id) ON DELETE RESTRICT;
+
+CREATE INDEX IF NOT EXISTS idx_bookings_date_status ON public.bookings(date, status);
+CREATE INDEX IF NOT EXISTS idx_bookings_client_phone ON public.bookings(client_phone);
 
 CREATE TABLE IF NOT EXISTS public.testimonials (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   client_name TEXT NOT NULL,
-  rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  rating INTEGER,
   content TEXT NOT NULL,
   service_type TEXT,
   is_featured BOOLEAN DEFAULT FALSE,
@@ -182,7 +143,7 @@ ALTER TABLE public.testimonials
   ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
 
 CREATE TABLE IF NOT EXISTS public.settings (
-  key TEXT PRIMARY KEY,
+  key TEXT,
   value JSONB NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -192,21 +153,7 @@ ALTER TABLE public.settings
   ADD COLUMN IF NOT EXISTS value JSONB,
   ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'settings_pkey'
-      AND conrelid = 'public.settings'::regclass
-  ) THEN
-    ALTER TABLE public.settings
-      ADD CONSTRAINT settings_pkey PRIMARY KEY (key);
-  END IF;
-END $$;
-
-CREATE INDEX IF NOT EXISTS idx_bookings_date_status ON public.bookings(date, status);
-CREATE INDEX IF NOT EXISTS idx_bookings_client_phone ON public.bookings(client_phone);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_settings_key ON public.settings(key);
 
 ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.availability ENABLE ROW LEVEL SECURITY;
@@ -266,7 +213,7 @@ CREATE POLICY "Authenticated users have full access to settings" ON public.setti
   FOR ALL USING (auth.role() = 'authenticated') WITH CHECK (auth.role() = 'authenticated');
 
 INSERT INTO public.services (name, price, duration_minutes, description, sort_order, active)
-SELECT t.name, t.price, t.duration_minutes, t.description, t.sort_order, TRUE
+SELECT v.name, v.price, v.duration_minutes, v.description, v.sort_order, TRUE
 FROM (
   VALUES
     ('Classic Lashes', 119.00, 60, 'Individual lash extensions applied one-by-one for a natural, elegant look.', 1),
@@ -278,9 +225,9 @@ FROM (
     ('Volume Fill', 115.00, 75, 'Refresh your volume set. Best scheduled within 2-3 weeks of your last visit.', 7),
     ('Lash Removal + New Set', 159.00, 90, 'Gentle removal of existing extensions followed by a fresh new set.', 8),
     ('Add 20 Lash Extensions', 20.00, 15, 'Add 20 extra lash extensions to your service.', 9)
-) AS t(name, price, duration_minutes, description, sort_order)
+) AS v(name, price, duration_minutes, description, sort_order)
 WHERE NOT EXISTS (
-  SELECT 1 FROM public.services s WHERE s.name = t.name
+  SELECT 1 FROM public.services s WHERE s.name = v.name
 );
 
 INSERT INTO public.availability (day_of_week, start_time, end_time, is_active)
@@ -298,7 +245,7 @@ ON CONFLICT (day_of_week) DO UPDATE SET
   is_active = EXCLUDED.is_active;
 
 INSERT INTO public.break_times (day_of_week, start_time, end_time, label)
-SELECT t.day_of_week, t.start_time, t.end_time, t.label
+SELECT v.day_of_week, v.start_time, v.end_time, v.label
 FROM (
   VALUES
     (2, '12:30'::time, '13:30'::time, 'Lunch Break'),
@@ -306,13 +253,13 @@ FROM (
     (4, '12:30'::time, '13:30'::time, 'Lunch Break'),
     (5, '12:30'::time, '13:30'::time, 'Lunch Break'),
     (6, '12:30'::time, '13:30'::time, 'Lunch Break')
-) AS t(day_of_week, start_time, end_time, label)
+) AS v(day_of_week, start_time, end_time, label)
 WHERE NOT EXISTS (
   SELECT 1
   FROM public.break_times b
-  WHERE b.day_of_week = t.day_of_week
-    AND b.start_time = t.start_time
-    AND b.end_time = t.end_time
+  WHERE b.day_of_week = v.day_of_week
+    AND b.start_time = v.start_time
+    AND b.end_time = v.end_time
 );
 
 INSERT INTO public.settings (key, value)
@@ -323,6 +270,8 @@ VALUES
   ('buffer_minutes', '15'::jsonb),
   ('sms_notifications_enabled', 'false'::jsonb),
   ('timezone', '"America/Chicago"'::jsonb)
-ON CONFLICT (key) DO NOTHING;
+ON CONFLICT (key) DO UPDATE SET
+  value = EXCLUDED.value,
+  updated_at = NOW();
 
 COMMIT;
