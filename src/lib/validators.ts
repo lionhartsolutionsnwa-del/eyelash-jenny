@@ -15,7 +15,7 @@ export const bookingSchema = z.object({
     ),
   client_email: z.string().email('Invalid email address').optional(),
   service_id: z.enum(['classic', 'hybrid', 'volume', 'wispy', 'classic-fill', 'hybrid-fill', 'volume-fill', 'lash-removal'], {
-    errorMap: () => ({ message: 'Invalid service selected' }),
+    message: 'Invalid service selected',
   }),
   date: z
     .string()
