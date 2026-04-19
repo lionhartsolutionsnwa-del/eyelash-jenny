@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAdminClient } from '@/lib/supabase/admin';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedPhone = normalizePhone(phone);
-    const supabase = await createClient();
+    const supabase = getAdminClient();
 
     // Fetch admin user by phone
     const { data: user, error: userError } = await supabase
@@ -40,6 +40,9 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (userError || !user) {
+      if (userError) {
+        console.error('[LOGIN] User lookup error:', userError);
+      }
       return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
     }
 
