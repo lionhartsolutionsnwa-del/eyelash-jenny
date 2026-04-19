@@ -19,6 +19,19 @@ interface ServiceInfo {
   duration_minutes?: number;
 }
 
+function isMissingRelationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const code = (error as { code?: string }).code;
+  return code === 'PGRST205' || code === '42P01';
+}
+
+function schemaMissingResponse(table: string) {
+  return Response.json(
+    { error: `Booking configuration is incomplete: missing database table '${table}'` },
+    { status: 500 }
+  );
+}
+
 // GET /api/bookings — Admin: list all bookings
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -85,9 +98,7 @@ const publicBookingSchema = z.object({
   client_email: z.string().email('Invalid email address').optional().or(z.literal('')),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD format'),
   start_time: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/, 'Time must be HH:MM or HH:MM:SS format'),
-  service_id: z.enum(['classic', 'hybrid', 'volume', 'wispy', 'classic-fill', 'hybrid-fill', 'volume-fill', 'lash-removal'], {
-    message: 'Invalid service selected',
-  }),
+  service_id: z.string().min(1, 'Service is required'),
   sms_reminders_consent: z.boolean().refine((v) => v === true, 'You must agree to receive appointment reminders'),
   sms_marketing_consent: z.boolean().optional().default(false),
   notes: z.string().optional(),
@@ -175,11 +186,19 @@ export async function POST(request: NextRequest) {
   }
 
   // 4. Check blocked date
-  const { data: blockedDate } = await supabase
+  const { data: blockedDate, error: blockedDateError } = await supabase
     .from('blocked_dates')
     .select('id')
     .eq('date', input.date)
     .maybeSingle();
+
+  if (blockedDateError) {
+    console.error('[BOOKING] blocked_dates query error:', blockedDateError);
+    if (isMissingRelationError(blockedDateError)) {
+      return schemaMissingResponse('blocked_dates');
+    }
+    return Response.json({ error: 'Failed to validate blocked dates' }, { status: 500 });
+  }
 
   if (blockedDate) {
     return Response.json({ error: 'This date is not available for booking' }, { status: 409 });
@@ -187,12 +206,20 @@ export async function POST(request: NextRequest) {
 
   // 5. Check day_of_week availability
   const dayOfWeek = requestedDate.getDay();
-  const { data: availability } = await supabase
+  const { data: availability, error: availabilityError } = await supabase
     .from('availability')
     .select('start_time, end_time, is_active')
     .eq('day_of_week', dayOfWeek)
     .eq('is_active', true)
     .maybeSingle();
+
+  if (availabilityError) {
+    console.error('[BOOKING] availability query error:', availabilityError);
+    if (isMissingRelationError(availabilityError)) {
+      return schemaMissingResponse('availability');
+    }
+    return Response.json({ error: 'Failed to validate business hours' }, { status: 500 });
+  }
 
   if (!availability) {
     return Response.json({ error: 'Not available on this day' }, { status: 409 });
@@ -208,11 +235,19 @@ export async function POST(request: NextRequest) {
   }
 
   // 7. Check existing bookings for that date/time slot
-  const { data: existingBookings } = await supabase
+  const { data: existingBookings, error: existingBookingsError } = await supabase
     .from('bookings')
     .select('start_time, end_time')
     .eq('date', input.date)
     .neq('status', 'cancelled');
+
+  if (existingBookingsError) {
+    console.error('[BOOKING] existing bookings query error:', existingBookingsError);
+    if (isMissingRelationError(existingBookingsError)) {
+      return schemaMissingResponse('bookings');
+    }
+    return Response.json({ error: 'Failed to validate slot availability' }, { status: 500 });
+  }
 
   // Check if any booking overlaps the 30-min slot
   const slotEndMinutes = slotMinutes + 30;
@@ -227,14 +262,65 @@ export async function POST(request: NextRequest) {
   }
 
   // 8. Fetch service to get duration and calculate end_time
-  const { data: svc, error: servicesError } = await supabase
+  let svc: ServiceInfo | null = null;
+  let servicesError: unknown = null;
+
+  const byIdResult = await supabase
     .from('services')
     .select('id, name, duration_minutes, price')
     .eq('id', input.service_id)
     .eq('active', true)
     .single();
 
-  if (servicesError || !svc) {
+  if (!byIdResult.error && byIdResult.data) {
+    svc = byIdResult.data;
+  } else {
+    servicesError = byIdResult.error;
+  }
+
+  // Backward compatibility: resolve legacy slug-based service IDs.
+  if (!svc) {
+    const legacyServiceNames: Record<string, string[]> = {
+      classic: ['Classic Lashes', 'Classic Full Set'],
+      hybrid: ['Hybrid Lashes', 'Hybrid Full Set'],
+      volume: ['Volume Lashes'],
+      wispy: ['Wispy Lashes'],
+      'classic-fill': ['Classic Fill', 'Classic Refill'],
+      'hybrid-fill': ['Hybrid Fill'],
+      'volume-fill': ['Volume Fill'],
+      'lash-removal': ['Lash Removal + New Set', 'Lash Removal', 'Lash Extension Removal'],
+    };
+
+    const candidateNames = legacyServiceNames[input.service_id];
+    if (candidateNames?.length) {
+      const fallbackResult = await supabase
+        .from('services')
+        .select('id, name, duration_minutes, price, sort_order')
+        .in('name', candidateNames)
+        .eq('active', true)
+        .order('sort_order', { ascending: true })
+        .limit(1);
+
+      if (!fallbackResult.error && fallbackResult.data?.length) {
+        const { sort_order, ...resolvedService } = fallbackResult.data[0] as ServiceInfo & { sort_order: number };
+        void sort_order;
+        svc = resolvedService;
+        servicesError = null;
+      } else if (fallbackResult.error) {
+        servicesError = fallbackResult.error;
+      }
+    }
+  }
+
+  if (servicesError && isMissingRelationError(servicesError)) {
+    console.error('[BOOKING] services table missing:', servicesError);
+    return schemaMissingResponse('services');
+  }
+
+  if (!svc) {
+    if (servicesError) {
+      console.error('[BOOKING] services lookup error:', servicesError);
+    }
     return Response.json({ error: 'Service not found or inactive' }, { status: 404 });
   }
 
@@ -268,6 +354,9 @@ export async function POST(request: NextRequest) {
 
   if (insertError) {
     console.error('[BOOKING] Insert error:', insertError);
+    if (isMissingRelationError(insertError)) {
+      return schemaMissingResponse('bookings');
+    }
     return Response.json({ error: 'Failed to create booking. Please try again.' }, { status: 500 });
   }
 

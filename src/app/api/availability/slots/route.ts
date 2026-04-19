@@ -2,6 +2,19 @@ import { NextRequest } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
 import { computeAvailableSlots, formatTimeDisplay } from '@/lib/slots';
 
+function isMissingRelationError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const code = (error as { code?: string }).code;
+  return code === 'PGRST205' || code === '42P01';
+}
+
+function schemaMissingResponse(table: string) {
+  return Response.json(
+    { error: `Availability configuration is incomplete: missing database table '${table}'` },
+    { status: 500 }
+  );
+}
+
 // GET /api/availability/slots?date=YYYY-MM-DD&service_id=UUID
 // Public: compute available time slots for a given date and service
 export async function GET(request: NextRequest) {
@@ -35,7 +48,14 @@ export async function GET(request: NextRequest) {
       .eq('active', true)
       .single();
 
-    if (serviceError || !service) {
+    if (serviceError) {
+      if (isMissingRelationError(serviceError)) {
+        return schemaMissingResponse('services');
+      }
+      return Response.json({ error: 'Failed to look up service' }, { status: 500 });
+    }
+
+    if (!service) {
       return Response.json(
         { error: 'Service not found or inactive' },
         { status: 404 }
@@ -45,11 +65,18 @@ export async function GET(request: NextRequest) {
   }
 
   // 2. Check if this date is blocked
-  const { data: blockedDate } = await getAdminClient()
+  const { data: blockedDate, error: blockedDateError } = await getAdminClient()
     .from('blocked_dates')
     .select('id')
     .eq('date', date)
     .maybeSingle();
+
+  if (blockedDateError) {
+    if (isMissingRelationError(blockedDateError)) {
+      return schemaMissingResponse('blocked_dates');
+    }
+    return Response.json({ error: 'Failed to check blocked dates' }, { status: 500 });
+  }
 
   if (blockedDate) {
     return Response.json({ slots: [], blocked: true });
@@ -59,34 +86,62 @@ export async function GET(request: NextRequest) {
   const dayOfWeek = new Date(date + 'T00:00:00').getDay();
 
   // 4. Fetch availability for that day
-  const { data: availability } = await getAdminClient()
+  const { data: availability, error: availabilityError } = await getAdminClient()
     .from('availability')
     .select('start_time, end_time, is_active')
     .eq('day_of_week', dayOfWeek)
     .single();
+
+  if (availabilityError) {
+    if (isMissingRelationError(availabilityError)) {
+      return schemaMissingResponse('availability');
+    }
+    return Response.json({ error: 'Failed to load availability' }, { status: 500 });
+  }
 
   if (!availability || !availability.is_active) {
     return Response.json({ slots: [], closed: true });
   }
 
   // 5. Fetch break times for that day
-  const { data: breakTimes } = await getAdminClient()
+  const { data: breakTimes, error: breakTimesError } = await getAdminClient()
     .from('break_times')
     .select('start_time, end_time')
     .eq('day_of_week', dayOfWeek);
 
+  if (breakTimesError) {
+    if (isMissingRelationError(breakTimesError)) {
+      return schemaMissingResponse('break_times');
+    }
+    return Response.json({ error: 'Failed to load break times' }, { status: 500 });
+  }
+
   // 6. Fetch non-cancelled bookings for that date
-  const { data: existingBookings } = await getAdminClient()
+  const { data: existingBookings, error: existingBookingsError } = await getAdminClient()
     .from('bookings')
     .select('start_time, end_time')
     .eq('date', date)
     .neq('status', 'cancelled');
 
+  if (existingBookingsError) {
+    if (isMissingRelationError(existingBookingsError)) {
+      return schemaMissingResponse('bookings');
+    }
+    return Response.json({ error: 'Failed to load existing bookings' }, { status: 500 });
+  }
+
   // 7. Fetch settings for slot_interval and buffer
-  const { data: settings } = await getAdminClient()
+  const { data: settings, error: settingsError } = await getAdminClient()
     .from('settings')
     .select('key, value')
     .in('key', ['slot_interval_minutes', 'buffer_minutes']);
+
+  if (settingsError) {
+    if (isMissingRelationError(settingsError)) {
+      return schemaMissingResponse('settings');
+    }
+    return Response.json({ error: 'Failed to load booking settings' }, { status: 500 });
+  }
 
   let slotInterval = 30;
   let bufferMinutes = 15;
