@@ -14,6 +14,7 @@ function getSupabase() {
 }
 
 interface ServiceInfo {
+  id: string;
   name: string;
   price: number;
   duration_minutes?: number;
@@ -353,7 +354,7 @@ export async function POST(request: NextRequest) {
       date: input.date,
       start_time: toHHMM(input.start_time),
       end_time: endTime,
-      service_id: input.service_id,
+      service_id: svc.id,
       status: 'pending',
       sms_reminders_consent: input.sms_reminders_consent,
       sms_marketing_consent: input.sms_marketing_consent ?? false,
@@ -447,6 +448,7 @@ export async function POST(request: NextRequest) {
   } else {
     // Store only manager recipients in appointments.client_phone for n8n to target business numbers.
     const managerRecipients = managerPhones.join(',');
+    const customerPhone = normalizeE164Phone(input.client_phone) ?? input.client_phone.replace(/\D/g, '');
 
     const { error: apptError } = await supabase
       .from('appointments')
@@ -454,6 +456,9 @@ export async function POST(request: NextRequest) {
         booking_id: booking.id,  // Use real booking ID for linking
         client_name: input.client_name.trim(),
         client_phone: managerRecipients,
+        manager_phones: managerRecipients,
+        customer_phone: customerPhone,
+        customer_email: input.client_email?.toLowerCase() || null,
         appointment_time: appointmentTime.toISOString(),
         service_type: serviceDescription,  // Full description incl. addon for n8n SMS
       });
