@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { parseStatelessAdminSessionToken } from '@/lib/admin-session-token';
 import crypto from 'crypto';
 
 function hashToken(token: string): string {
@@ -31,42 +32,42 @@ export async function proxy(request: NextRequest) {
 
   // Verify token against admin_sessions table
   if (token) {
-    let supabase;
-    try {
-      supabase = await createClient();
-    } catch {
-      // Supabase not configured → allow through (dev mode)
-      return NextResponse.next();
+    let isValid = false;
+    const supabase = getAdminClient();
+    const statelessSession = parseStatelessAdminSessionToken(token);
+
+    if (statelessSession) {
+      try {
+        const { data: user, error } = await supabase
+          .from('admin_users')
+          .select('active')
+          .eq('id', statelessSession.userId)
+          .single();
+        isValid = !error && !!user?.active;
+      } catch {
+        isValid = false;
+      }
+    } else {
+      const tokenHash = hashToken(token);
+      try {
+        const { data: session } = await supabase
+          .from('admin_sessions')
+          .select('expires_at, admin_users!inner(id, active)')
+          .eq('token_hash', tokenHash)
+          .single();
+
+        const sessionData = session as
+          | { expires_at: string; admin_users: { active: boolean } }
+          | null;
+        isValid = !!(
+          sessionData &&
+          new Date(sessionData.expires_at) > new Date() &&
+          sessionData.admin_users?.active
+        );
+      } catch {
+        isValid = false;
+      }
     }
-
-    const tokenHash = hashToken(token);
-
-    let session;
-    try {
-      const result = await supabase
-        .from('admin_sessions')
-        .select('expires_at, admin_users!inner(id, active)')
-        .eq('token_hash', tokenHash)
-        .single();
-
-      session = result.data;
-    } catch {
-      // Table doesn't exist or DB error → clear bad cookie, go to login
-      const response = NextResponse.redirect(new URL('/admin/login', request.url));
-      response.cookies.set('admin_token', '', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        expires: new Date(0),
-        path: '/',
-      });
-      return response;
-    }
-
-    const sessionData = session as { expires_at: string; admin_users: { active: boolean } } | null;
-    const isValid = sessionData &&
-      new Date(sessionData.expires_at) > new Date() &&
-      sessionData.admin_users?.active;
 
     if (!isValid && !isLoginPage) {
       // Invalid/expired session → clear cookie and redirect to login

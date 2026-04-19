@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { getAdminClient } from '@/lib/supabase/admin';
+import { isStatelessAdminSessionToken } from '@/lib/admin-session-token';
 import crypto from 'crypto';
 
 function hashToken(token: string): string {
@@ -9,13 +10,10 @@ function hashToken(token: string): string {
 export async function POST(request: NextRequest) {
   const token = request.cookies.get('admin_token')?.value;
 
-  if (token) {
-    const supabase = await createClient();
+  if (token && !isStatelessAdminSessionToken(token)) {
+    const supabase = getAdminClient();
     const tokenHash = hashToken(token);
-    await supabase
-      .from('admin_sessions')
-      .delete()
-      .eq('token_hash', tokenHash);
+    await supabase.from('admin_sessions').delete().eq('token_hash', tokenHash);
   }
 
   const response = NextResponse.json({ success: true });

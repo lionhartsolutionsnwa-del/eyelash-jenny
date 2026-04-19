@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest } from 'next/server';
 import crypto from 'crypto';
+import { parseStatelessAdminSessionToken } from '@/lib/admin-session-token';
 
 export function getAdminClient() {
   return createClient(
@@ -22,9 +23,21 @@ export async function validateAdminSession(
   const token = request.cookies.get('admin_token')?.value;
   if (!token) return null;
 
-  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const supabase = getAdminClient();
 
+  const statelessSession = parseStatelessAdminSessionToken(token);
+  if (statelessSession) {
+    const { data: user, error } = await supabase
+      .from('admin_users')
+      .select('id, active')
+      .eq('id', statelessSession.userId)
+      .single();
+
+    if (error || !user?.active) return null;
+    return user.id;
+  }
+
+  const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
   const { data, error } = await supabase
     .from('admin_sessions')
     .select('user_id, expires_at, admin_users!inner(active)')

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase/admin';
+import { createStatelessAdminSessionToken } from '@/lib/admin-session-token';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
@@ -65,9 +66,19 @@ export async function POST(request: NextRequest) {
         expires_at: expiresAt.toISOString(),
       });
 
+    let cookieToken = token;
     if (insertError) {
-      console.error('[LOGIN] Session insert error:', insertError);
-      return NextResponse.json({ error: 'Session creation failed' }, { status: 500 });
+      const code = (insertError as { code?: string }).code;
+      const tableMissing = code === 'PGRST205' || code === '42P01';
+
+      if (!tableMissing) {
+        console.error('[LOGIN] Session insert error:', insertError);
+        return NextResponse.json({ error: 'Session creation failed' }, { status: 500 });
+      }
+
+      // Backward-compatible fallback when admin_sessions hasn't been created yet.
+      cookieToken = createStatelessAdminSessionToken(user.id, expiresAt);
+      console.warn('[LOGIN] admin_sessions missing, using stateless session token');
     }
 
     // Create response with user data
@@ -82,7 +93,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Set HttpOnly cookie
-    response.cookies.set('admin_token', token, {
+    response.cookies.set('admin_token', cookieToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
