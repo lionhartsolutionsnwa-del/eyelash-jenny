@@ -19,6 +19,15 @@ interface ServiceInfo {
   duration_minutes?: number;
 }
 
+function normalizeE164Phone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  if (digits.length > 10 && !digits.startsWith('1')) return `+${digits}`;
+  return `+${digits}`;
+}
+
 function isMissingRelationError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false;
   const code = (error as { code?: string }).code;
@@ -401,10 +410,10 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 12. Insert into appointments table for n8n SMS workflow
+  // 12. Insert into appointments table for n8n business-side SMS workflow
+  // IMPORTANT: recipients must be manager numbers only (never customer numbers).
   // Build UTC appointment_time from date + start_time
   const appointmentTime = new Date(`${input.date}T${toHHMM(input.start_time)}:00.000Z`);
-  const serviceSlug = svc.name.toLowerCase().replace(/\s+/g, '-').replace(/lashes$/, '');
 
   // Build a descriptive service string that includes addon if selected
   let serviceDescription = svc.name;
@@ -415,21 +424,46 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const { error: apptError } = await supabase
-    .from('appointments')
-    .insert({
-      booking_id: booking.id,  // Use real booking ID for FK relationship
-      client_name: input.client_name.trim(),
-      client_phone: input.client_phone.replace(/\D/g, ''),
-      appointment_time: appointmentTime.toISOString(),
-      service_type: serviceDescription,  // Full description incl. addon for n8n SMS
-    });
+  const { data: managerUsers, error: managerUsersError } = await supabase
+    .from('admin_users')
+    .select('phone')
+    .eq('active', true)
+    .eq('role', 'manager');
 
-  if (apptError) {
-    // Log but don't fail — booking itself succeeded
-    console.error('[BOOKING] appointments insert error:', apptError);
+  if (managerUsersError) {
+    console.error('[BOOKING] manager lookup error:', managerUsersError);
+  }
+
+  const managerPhones = Array.from(
+    new Set(
+      (managerUsers ?? [])
+        .map((u) => normalizeE164Phone(u.phone))
+        .filter((p): p is string => !!p)
+    )
+  );
+
+  if (managerPhones.length === 0) {
+    console.warn('[BOOKING] No active manager phone numbers found; skipping appointments insert');
   } else {
-    console.log('[BOOKING] Inserted into appointments table for n8n SMS workflow');
+    // Store only manager recipients in appointments.client_phone for n8n to target business numbers.
+    const managerRecipients = managerPhones.join(',');
+
+    const { error: apptError } = await supabase
+      .from('appointments')
+      .insert({
+        booking_id: booking.id,  // Use real booking ID for linking
+        client_name: input.client_name.trim(),
+        client_phone: managerRecipients,
+        appointment_time: appointmentTime.toISOString(),
+        service_type: serviceDescription,  // Full description incl. addon for n8n SMS
+      });
+
+    if (apptError) {
+      // Log but don't fail — booking itself succeeded
+      console.error('[BOOKING] appointments insert error:', apptError);
+    } else {
+      console.log('[BOOKING] Inserted manager-targeted row into appointments for n8n workflow');
+    }
   }
 
   return Response.json(bookingWithServices ?? booking, { status: 201 });
