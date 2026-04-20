@@ -429,7 +429,7 @@ export async function POST(request: NextRequest) {
     .from('admin_users')
     .select('phone')
     .eq('active', true)
-    .eq('role', 'manager');
+    .in('role', ['manager', 'owner']);
 
   if (managerUsersError) {
     console.error('[BOOKING] manager lookup error:', managerUsersError);

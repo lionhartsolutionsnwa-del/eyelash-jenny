@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
     .from('admin_users')
     .select('phone')
     .eq('active', true)
-    .eq('role', 'manager');
+    .in('role', ['manager', 'owner']);
 
   if (managerError) {
     console.error('[CRON] Failed to fetch manager phones:', managerError);
