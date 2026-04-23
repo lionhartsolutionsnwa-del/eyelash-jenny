@@ -141,3 +141,50 @@ export async function addNote(input: { contactId: string; body: string }): Promi
     console.error('[GHL] addNote error:', err);
   }
 }
+
+// Cancel an appointment in GHL — adds 'cancelled' tag and a note
+export async function cancelAppointment(input: {
+  phone: string;
+  contactId?: string | null;
+  service: string;
+  date: string;
+  time: string;
+}): Promise<void> {
+  try {
+    let contactId = input.contactId;
+
+    // If no contactId passed, search by phone
+    if (!contactId) {
+      const phone = toE164(input.phone);
+      const search = await httpsRequest(
+        'GET',
+        `/contacts/?locationId=${locationId()}&query=${encodeURIComponent(phone)}`
+      );
+      if (search.status === 200) {
+        contactId = (search.data as { contacts?: { id: string }[] })?.contacts?.[0]?.id ?? null;
+      }
+    }
+
+    if (!contactId) {
+      console.log('[GHL] cancelAppointment: no contact found for', input.phone);
+      return;
+    }
+
+    // Add 'cancelled' tag
+    await httpsRequest('PUT', `/contacts/${contactId}`, JSON.stringify({
+      tags: ['cancelled'],
+    }));
+
+    // Add cancellation note
+    const noteBody = [
+      `Appointment CANCELLED`,
+      `Service: ${input.service}`,
+      `Date: ${input.date} at ${input.time}`,
+    ].join('\n');
+    await addNote({ contactId, body: noteBody });
+
+    console.log('[GHL] Cancelled appointment for contact:', contactId);
+  } catch (err) {
+    console.error('[GHL] cancelAppointment error:', err);
+  }
+}

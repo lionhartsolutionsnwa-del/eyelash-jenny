@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAdminClient, validateAdminSession } from '@/lib/supabase/admin';
+import { cancelAppointment } from '@/lib/ghl';
 
 type Context = { params: Promise<{ id: string }> };
 
@@ -50,6 +51,33 @@ export async function PATCH(request: NextRequest, context: Context) {
 
   updates.updated_at = new Date().toISOString();
 
+  // If cancelling, propagate status to the appointments table so n8n skips SMS
+  // and sync the cancellation to GoHighLevel
+  if (updates.status === 'cancelled') {
+    // Fetch current booking data for GHL sync before updating
+    const { data: bookingData } = await getAdminClient()
+      .from('bookings')
+      .select('client_phone, date, start_time, services(name)')
+      .eq('id', id)
+      .single();
+
+    await getAdminClient()
+      .from('appointments')
+      .update({ status: 'cancelled' })
+      .eq('booking_id', id)
+      .eq('status', 'active');
+
+    // Sync cancellation to GHL (non-blocking — never fail the API response)
+    if (bookingData && process.env.GHL_API_KEY && process.env.GHL_LOCATION_ID) {
+      cancelAppointment({
+        phone: bookingData.client_phone,
+        service: (bookingData.services as { name: string } | null)?.name ?? 'Appointment',
+        date: bookingData.date,
+        time: bookingData.start_time,
+      }).catch(err => console.error('[GHL] cancelAppointment error:', err));
+    }
+  }
+
   const { data, error } = await getAdminClient()
     .from('bookings')
     .update(updates)
@@ -72,6 +100,30 @@ export async function DELETE(request: NextRequest, context: Context) {
   }
 
   const { id } = await context.params;
+
+  // Fetch current booking data for GHL sync before updating
+  const { data: bookingData } = await getAdminClient()
+    .from('bookings')
+    .select('client_phone, date, start_time, services(name)')
+    .eq('id', id)
+    .single();
+
+  // Cancel the appointment first so n8n stops texting
+  await getAdminClient()
+    .from('appointments')
+    .update({ status: 'cancelled' })
+    .eq('booking_id', id)
+    .eq('status', 'active');
+
+  // Sync cancellation to GHL (non-blocking — never fail the API response)
+  if (bookingData && process.env.GHL_API_KEY && process.env.GHL_LOCATION_ID) {
+    cancelAppointment({
+      phone: bookingData.client_phone,
+      service: (bookingData.services as { name: string } | null)?.name ?? 'Appointment',
+      date: bookingData.date,
+      time: bookingData.start_time,
+    }).catch(err => console.error('[GHL] cancelAppointment error:', err));
+  }
 
   const { data, error } = await getAdminClient()
     .from('bookings')
